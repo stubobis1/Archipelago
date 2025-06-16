@@ -44,8 +44,8 @@ class UnlockerClient(CommonContext):
     items_handling = 0b111
     __debug = True  # Enable debug mode for Unlocker client
 
-    item_name_to_unlocker_location = {}
-    player_location_table = {}
+    item_name_to_unlocker_location = {} # remove this I think?
+    required_for_finish_player_location_table = {}
     item_id_to_location_name = {}
 
     async def server_auth(self, password_requested: bool = False):
@@ -71,7 +71,7 @@ class UnlockerClient(CommonContext):
                 if __debug__:
                     logger.debug(f"Received slot data: {slot_data}")
                 self.item_name_to_unlocker_location = slot_data.get('item_name_to_unlocker_location')
-                self.player_location_table = slot_data.get('player_location_table')
+                self.required_for_finish_player_location_table = slot_data.get('player_location_table')
                 self.item_id_to_location_name = slot_data.get('item_id_to_location_name')
             logger.info(f"Connected to Unlocker server with slot data: {slot_data}")
         if cmd == "ReceivedItems":
@@ -80,7 +80,6 @@ class UnlockerClient(CommonContext):
             #self.on_items_received(args["items"])
 
             if self.__current_loop is not None:
-                # Run the unlock_all_available_items coroutine in the event loop
                 if __debug__:
                     logger.debug("Running unlock_all_available_items in event loop")
                 self.__current_loop.create_task(self.unlock_all_available_items())
@@ -98,6 +97,21 @@ class UnlockerClient(CommonContext):
 
             items = [obj.item for obj in self.items_received]
             await self.check_locations(items)
+            # check if we have all items in required_for_finish_player_location_table
+            if __debug__:
+                logger.debug(f"Checking locations for items: {items}")
+            # Check if all required items are received
+            required_items = set(self.required_for_finish_player_location_table.values())
+            received_items = set(obj.item for obj in self.items_received)
+            if required_items.issubset(received_items):
+                if __debug__:
+                    logger.debug("All required items for finish are received.")
+                self.finished_game = True
+
+            else:
+                missing = required_items - received_items
+                if __debug__:
+                    logger.debug(f"Missing required items for finish: {missing}")
 
 
 

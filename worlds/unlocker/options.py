@@ -1,11 +1,16 @@
 from dataclasses import dataclass
-from Options import OptionList, PerGameCommonOptions, Toggle, DefaultOnToggle
+from Options import OptionList, PerGameCommonOptions, Toggle, DefaultOnToggle, Accessibility
 
 
-class ItemList(OptionList):
-    """Comma-separated list of items to unlock in this game."""
-    display_name = "Items to unlock"
+class RequiredItemList(OptionList):
+    """Comma-separated list of items to unlock in this game. These items are logically required in the multiworld."""
+    display_name = "Required Items to unlock"
     default = ["Item 1", "Item 2", "Item 3"]
+
+class OptionalItemList(OptionList):
+    """Comma-separated list of items to unlock in this game. These items are optionally required in the multiworld."""
+    display_name = "Optional items to unlock"
+    default = []
 
 class OnlyAllowOtherGamesItems(DefaultOnToggle):
     """If enabled, only items from other games will be used. if false, items from any unlocker game can also be used."""
@@ -18,5 +23,6 @@ class OnlyAllowOtherGamesItems(DefaultOnToggle):
 
 @dataclass
 class UnlockerOptions(PerGameCommonOptions):
-    item_list: ItemList
+    required_item_list: RequiredItemList
+    optional_item_list: OptionalItemList
     only_allow_other_games_items: OnlyAllowOtherGamesItems
