@@ -1,0 +1,163 @@
+{
+	"info": {
+		"_postman_id": "af5d5fdb-db09-4203-876f-5272b98a1f9c",
+		"name": "Path of Exile API (GGG)",
+		"description": "Path of Exile API calls using Bearer token auth.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "72873"
+	},
+	"item": [
+		{
+			"name": "Get Characters",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.pathofexile.com/character",
+					"protocol": "https",
+					"host": [
+						"api",
+						"pathofexile",
+						"com"
+					],
+					"path": [
+						"character"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Character",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.pathofexile.com/character/{{character-name}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"pathofexile",
+						"com"
+					],
+					"path": [
+						"character",
+						"{{character-name}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Stashes",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.pathofexile.com/stash/{{league}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"pathofexile",
+						"com"
+					],
+					"path": [
+						"stash",
+						"{{league}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Stash",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{bearer}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.pathofexile.com/stash/{{league}}/{{stash-id}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"pathofexile",
+						"com"
+					],
+					"path": [
+						"stash",
+						"{{league}}",
+						"{{stash-id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Leagues",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.pathofexile.com/leagues",
+					"protocol": "https",
+					"host": [
+						"api",
+						"pathofexile",
+						"com"
+					],
+					"path": [
+						"leagues"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "bearer",
+			"value": "your-token-here"
+		},
+		{
+			"key": "character-name",
+			"value": "ChickleMeFarkins",
+			"type": "default"
+		},
+		{
+			"key": "league",
+			"value": "Standard",
+			"type": "default"
+		},
+		{
+			"key": "stash-id",
+			"value": "c4407d1798",
+			"type": "default"
+		}
+	]
+}
