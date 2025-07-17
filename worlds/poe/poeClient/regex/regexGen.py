@@ -1105,9 +1105,11 @@ if __name__ == "__main__":
     # Select a subset
     subset = set()
 
-    for i in range(40):
-        subset.add(random.choice(list(all_names)))
-
+    for i in range(5):
+        name = random.choice(list(all_names))
+        subset.add(name)
+        print(name)
+    print("made subset")
     # Generate regex
     all_names = {name.lower() for name in all_names}
     subset = {name.lower() for name in subset}
