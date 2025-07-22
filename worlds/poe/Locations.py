@@ -36,7 +36,7 @@ class LocationDict(TypedDict, total=False):
     id: int
 
 acts = [
-    {"act": 0.5, "maxMonsterLevel": 4},
+    {"act": 0.2, "maxMonsterLevel": 2}, # man these roas are tough lol.
     {"act": 1, "maxMonsterLevel": 13},
     {"act": 2, "maxMonsterLevel": 23},
     {"act": 3, "maxMonsterLevel": 33},

@@ -14,13 +14,14 @@ from . import tts
 import worlds.poe.Items as Items
 import worlds.poe.Locations as Locations
 
-character_name = "DefaultCharacter"
 found_items_dict = {}
 found_items_set = set()
 save_path = "found_items.txt"
 total_items = set()
 is_char_in_logic = True
+
 _debug = True
+_verbose_debug = False
 total_items.update(baseItemTypes.get_base_item_types())
 
 async def when_enter_new_zone(line: str, context: "PathOfExileContext" = None):
@@ -31,22 +32,26 @@ async def when_enter_new_zone(line: str, context: "PathOfExileContext" = None):
     Args:
         line (str): The line from the log file indicating the new zone entry.
     """
+    if not "] : You have entered" in line:
+        return
     global is_char_in_logic
-    await validate_and_update(character_name, ctx=context)
+    await validate_and_update(ctx=context)
     await asyncio.sleep(0.5)  # Allow some time for the filter to update
     await inputHelper.send_poe_text("/itemfilter __ap")
 
-async def validate_and_update(character_name: str = character_name, ctx: "PathOfExileContext" = None) -> bool:
+async def validate_and_update(ctx: "PathOfExileContext" = None) -> bool:
     if ctx is None:
         # something is wrong, are we not connected?
         print("Context is None, cannot validate character.")
         return False
+    character_name = ctx.character_name
     char = {}
     try: 
         char = (await gggAPI.get_character(character_name)).character
+        ctx.last_response_from_api.setdefault("character",{})[ctx.character_name] = char
     except Exception as e:
         print(f"Error fetching character {character_name}: {e}")
-        return False
+        raise e
     
     global is_char_in_logic
     validate_errors = await validate_char(char, ctx)
@@ -58,7 +63,7 @@ async def validate_and_update(character_name: str = character_name, ctx: "PathOf
         locations_to_check = set()
         found_items_set = get_found_items(char)
         for item in found_items_set:
-            if _debug:
+            if _debug and _verbose_debug:
                 print(f"[DEBUG] Found item: {item}")
             location_id = Locations.get_location_id_from_item_name(item)
             if location_id is not None:
@@ -81,15 +86,15 @@ async def validate_and_update(character_name: str = character_name, ctx: "PathOf
 
 
 
-async def validate_char(character: gggAPI.Character, ctx: "PathOfExileContext") -> str:
+async def validate_char(character: gggAPI.Character, ctx: "PathOfExileContext") -> list[str]:
     # Perform validation logic here
 
     if character is None:
         print("Character is None, cannot validate.")
         return False
 
-    errors = []
-    
+    errors = list()
+
     total_recieved_items = list()
     for network_item in ctx.items_received:
         total_recieved_items.append(Items.item_table.get(network_item.item))
@@ -100,13 +105,18 @@ async def validate_char(character: gggAPI.Character, ctx: "PathOfExileContext") 
     magic_flask_count = 0
     unique_flask_count = 0
 
+    if character.class_ not in [i["name"] for i in total_recieved_items]:
+        errors.append(f"Class {character.class_}")
+
+    gucci_rarity_check = {}
     for equipped_item in character.equipment:
         rarity = equipped_item.rarity
-        
+        gucci_rarity_check.setdefault(rarity, 0)
+        gucci_rarity_check[rarity] += 1
         # simple checks.
         for slot in simple_equipment_slots:
             if equipped_item.inventoryId == slot:
-                errors = rarity_check(total_recieved_items, rarity, slot)
+                errors.append(rarity_check(total_recieved_items, rarity, slot))
                 
         if equipped_item.inventoryId == "Ring":
             errors.append(rarity_check(total_recieved_items, rarity, "Ring (left)"))
@@ -124,6 +134,17 @@ async def validate_char(character: gggAPI.Character, ctx: "PathOfExileContext") 
                     if prop_name.lower().endswith(weapon_base_type.lower()):
                         errors.append(rarity_check(total_recieved_items, rarity, weapon_base_type))
 
+        equipped_sockets = 0
+        if equipped_item.socketedItems is not None:
+            for socketed_item in equipped_item.socketedItems:
+                if socketed_item.support:
+                    equipped_sockets += 1
+                if socketed_item.baseType not in [i["name"] for i in total_recieved_items]:
+                    errors.append(f"Socketed {socketed_item.baseType} in {equipped_item.inventoryId}")
+
+        links = [i["name"] for i in total_recieved_items if i["name"] == f"Progressive max links - {equipped_item.baseType}"]
+        if len(links) < equipped_sockets - 1: # -1 for the skill gem
+            errors.append(f"Too many links for {equipped_item.baseType}")
 
         if equipped_item.inventoryId == "Flask":
             flask_rarity = equipped_item.rarity
@@ -134,31 +155,51 @@ async def validate_char(character: gggAPI.Character, ctx: "PathOfExileContext") 
             elif flask_rarity == "Unique":
                 unique_flask_count += 1
                 
-    if normal_flask_count > total_recieved_items.count("Normal Flask"):
+    # get count of items.name that match the progressive unlocks
+    if normal_flask_count > len([i["name"] for i in total_recieved_items if i["name"] == 'Progressive Flask Unlock Slot']):
         errors.append("Normal Flasks")
-    if magic_flask_count > total_recieved_items.count("Magic Flask"):
+    if magic_flask_count > len([i["name"] for i in total_recieved_items if i["name"] == 'Progressive Magic Flask Unlock']):
         errors.append("Magic Flasks")
-    if unique_flask_count > total_recieved_items.count("Unique Flask"):
+    if unique_flask_count > len([i["name"] for i in total_recieved_items if i["name"] == 'Progressive Unique Flask Unlock']):
         errors.append("Unique Flasks")
 
+    gucci_hobo_mode = ctx.slot_info.get("gucci_hobo_mode", False)
+    if gucci_hobo_mode == 1 or gucci_hobo_mode == 2 or gucci_hobo_mode ==3:
+        normal_gear = gucci_rarity_check.setdefault("Normal", 0)
+        magic_gear = gucci_rarity_check.setdefault("Magic", 0)
+        rare_gear = gucci_rarity_check.setdefault("Rare", 0)
+        if gucci_hobo_mode == 1 and  normal_gear + magic_gear + rare_gear > 1: #options_allow_one_slot_of_any_rarity
+            errors.append("Gucci Hobo Mode - Only one item allowed of any rarity")
+        if gucci_hobo_mode == 2 and (normal_gear > 1 or magic_gear + rare_gear > 0):  # options_allow_one_slot_of_normal_rarity
+            errors.append("Gucci Hobo Mode - Only one normal item allowed")
+        if gucci_hobo_mode == 3 and (normal_gear + magic_gear + rare_gear > 0): # option_no_non_unique_items
+            errors.append("Gucci Hobo Mode - No non-unique items allowed")
+
+    errors = [x for x in errors if x]  # filter out empty strings
+    if _debug and errors:
+        print("YOU ARE OUT OF LOGIC: " + ", ".join(errors))
+        print("YOU ARE OUT OF LOGIC: " + ", ".join(errors))
+        print("YOU ARE OUT OF LOGIC: " + ", ".join(errors))
+        print("YOU ARE OUT OF LOGIC: " + ", ".join(errors))
+        print("YOU ARE OUT OF LOGIC: " + ", ".join(errors))
     return errors
     
 
-def rarity_check(total_recieved_items, rarity: str, equipmentId: str) -> str:
+def rarity_check(total_recieved_items, rarity: str, equipmentId: str) -> str | None:
     valid = True
     if rarity == "Unique":
-        valid = True if f"Unique {equipmentId}" in total_recieved_items else False
+        valid = True if f"Unique {equipmentId}" in [i["name"] for i in total_recieved_items] else False
     elif rarity == "Rare":
-        valid = True if f"Rare {equipmentId}" in total_recieved_items else False
+        valid = True if f"Rare {equipmentId}" in [i["name"] for i in total_recieved_items] else False
     elif rarity == "Magic":
-        valid = True if f"Magic {equipmentId}" in total_recieved_items else False
+        valid = True if f"Magic {equipmentId}" in [i["name"] for i in total_recieved_items] else False
     else:
-        valid = True if f"Normal {equipmentId}" in total_recieved_items else False
+        valid = True if f"Normal {equipmentId}" in [i["name"] for i in total_recieved_items] else False
     
     if not valid:
         return equipmentId
     else: 
-        return ""
+        return None
 
 
 async def update_filter(ctx: "PathOfExileContext") -> bool:
@@ -179,17 +220,17 @@ async def update_filter(ctx: "PathOfExileContext") -> bool:
     return True
 
 async def update_filter_to_invalid_char_filter(errors: list[str]):
-    error_text = " and ".join(errors)
-    filename = fileHelper.short_hash(error_text) # this could be a long text lol
-    await tts.text_to_speech_if_doesnt_exist(
+    if len(errors) > 1:
+        error_text = " ... and ".join(errors)
+    else:
+        error_text = errors[0]
+    filename = f"{fileHelper.short_hash(error_text)}_{tts.WPM}.wav" # this could be a long text, so we use a hash
+    await tts.safe_tts_async(
         text=f"YOU ARE OUT OF LOGIC: {error_text}",
-        filename=itemFilter.filter_sounds_path / f"{filename}_{tts.WPM}.wav",
-        tts_rate_wpm=tts.WPM
+        filename=itemFilter.filter_sounds_path / f"{filename}",
+        rate=tts.WPM
     )
-    invalid_alert_sound = "apsound/invalid.wav"
-    invalid_item_filter_string = f""""Show
-{itemFilter.invalid_style_string}
-{invalid_alert_sound}"""
+    invalid_item_filter_string = itemFilter.generate_invalid_item_filter_block(f"{itemFilter.filter_sounds_dir_name}/{filename}")
     itemFilter.write_item_filter(invalid_item_filter_string, item_filter_import=None)
 
 
@@ -198,7 +239,7 @@ def get_found_items(char: gggAPI.Character) -> set:
     Fetches the found items for a given character from the GGG API.
 
     Args:
-        character_name (str): The name of the character to fetch items for.
+        char (gggAPI.Character): The character to fetch items for.
 
     Returns:
         dict: A dictionary containing the found items.
@@ -206,7 +247,7 @@ def get_found_items(char: gggAPI.Character) -> set:
     try:
         for item in char.inventory:
             found_items_set.add(item.baseType)
-            if _debug:
+            if _debug and _verbose_debug:
                 print(f"[DEBUG] Item in inventory: {item.baseType}")
     except Exception as e:
         print(f"Error fetching found items: {e}")

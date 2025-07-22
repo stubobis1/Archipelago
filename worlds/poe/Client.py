@@ -1,4 +1,6 @@
 import asyncio
+from random import Random
+
 import colorama
 import Utils
 from CommonClient import ClientCommandProcessor, CommonContext, server_loop, gui_enabled
@@ -31,27 +33,38 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
         """Authenticate with Path of Exile's OAuth2 service."""
         sync_run_async(gggAPI.request_new_access_token())
 
-
+    def _cmd_set_client_text_path(self, path: str) -> bool:
+        """Set the path to the Path of Exile client text file."""
+        if not path:
+            self.output("ERROR: Please provide a valid path to the client text file.")
+            return False
+        self.ctx.client_text_path = path
+        self.output(f"Client text path set to: {path}")
+        return True
 
     def _cmd_poe_char_name(self, character_name: str = "") -> bool:
         """Set the character name for the Path of Exile client."""
-        poe_main.character_name = character_name
+        self.ctx.character_name = character_name
         if not character_name:
             self.output("ERROR: Please provide a character name.")
             return False
         else:
             self.output(f"Character name set to: {character_name}")
 
+    #def _cmd_set_current_character(self) -> bool:
+    #    self.ctx.player_verify_code = Random.randint()
+
     def _cmd_start_poe(self) -> bool:
         """Start the Path of Exile client."""
-        if not poe_main.character_name:
+        if not self.ctx.character_name:
             self.output("ERROR: Please set your character name first using 'poe_char_name <name>'.")
             return False
-        self.output(f"Starting Path of Exile client for character: {poe_main.character_name}")
+        self.output(f"Starting Path of Exile client for character: {self.ctx.character_name}")
         poe_main.client_start(self.ctx)
         return True
 
     def _cmd_t(self):
+        """A test command to check if the command processor is working. -- This is a placeholder for testing purposes."""
         # self._cmd_connect("Player1:@localhost:38281")
         # wait 4 seconds to allow the character name to be set
         self._cmd_poe_char_name("_ap_test_one")
@@ -61,10 +74,15 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
         self._cmd_start_poe()
 
 
+
+
 class PathOfExileContext(CommonContext):
     game = "Path of Exile"
     command_processor = PathOfExileCommandProcessor
     items_handling = 0b111
+    character_name = ""
+    last_response_from_api = {}
+    client_text_path = ""
     _debug = True  # Enable debug mode for poe client
 
     def __init__(self, *args, **kwargs):
@@ -96,9 +114,6 @@ class PathOfExileContext(CommonContext):
 
 
 
-
-
-
 async def main():
     Utils.init_logging("PathOfExileContext", exception_logger="Client")
 
@@ -106,7 +121,7 @@ async def main():
 
 
     #if gui_enabled:
-    if False: # disable GUI for now
+    if True: # disable GUI for now
         ctx.run_gui()
     ctx.run_cli()
 

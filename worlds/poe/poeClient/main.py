@@ -1,22 +1,12 @@
 # Do the vendor imports
+from . import fileHelper
+fileHelper.load_vendor_modules()
+
 import os
-import sys
-
-    
-vendor_dir = os.path.join(os.path.dirname(__file__), "vendor")
-if vendor_dir not in sys.path:
-    sys.path.insert(0, vendor_dir)
-for subdir in os.listdir(vendor_dir):
-    full_path = os.path.join(vendor_dir, subdir)
-    if full_path not in sys.path:
-        if os.path.isdir(full_path):
-            sys.path.insert(0, full_path)
-
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from worlds.poe.Client import PathOfExileContext
-    
-from . import fileHelper
+
 from . import itemFilter
 from . import baseItemTypes
 from . import inputHelper
@@ -27,8 +17,6 @@ import asyncio
 from pynput import keyboard
 from pathlib import Path
 
-
-character_name = "merc_MY_FIREEE"
 _generate_wav = True  # Set to True if you want to generate the wav files
 _debug = True  # Set to True for debug output, False for production
 validate_char_debounce_time = 5  # seconds
@@ -85,12 +73,11 @@ def validate_char(ctx: "PathOfExileContext" = context):
         return
 
     if _debug:
-        print(f"[DEBUG] Validating character: {character_name} at {current_time}")
-    sync_run_async(validationLogic.validate_and_update(character_name, ctx))
+        print(f"[DEBUG] Validating character: {ctx.character_name} at {current_time}")
+    sync_run_async(validationLogic.validate_and_update(ctx.character_name, ctx))
     last_ran_validate_char = time.time()
 
 async def load_async(ctx: "PathOfExileContext" = None):
-    validationLogic.character_name = character_name
     #TODO GET THIS FROM AP
     #await validationLogic.load_found_items_from_file()
 
@@ -109,9 +96,9 @@ async def load_async(ctx: "PathOfExileContext" = None):
         relativePath = f"{itemFilter.filter_sounds_dir_name}/{filename.lower()}"
         fullPath = itemFilter.filter_sounds_path / f"{filename}"
         if _generate_wav:
-            if _debug:
-                print(f"[DEBUG] Generating TTS for item: {item_text} at {fullPath}")
             if not os.path.exists(fullPath):
+                if _debug:
+                    print(f"[DEBUG] Generating TTS for item: {item_text} at {fullPath}")
                 tts_tasks.append(
                     tts.safe_tts_async(
                         text=item_text,
@@ -154,9 +141,11 @@ def run():
         print("Main Loop stopped by user.")
 
 def client_start(ctx: "PathOfExileContext"):
-    global context
+    global context, path_to_client_txt
     context = ctx
     validationLogic.defaultContext = ctx
+    path_to_client_txt = ctx.client_text_path if ctx.client_text_path else path_to_client_txt
+    path_to_client_txt = Path(path_to_client_txt)
     run()
     
 async def main_async():
@@ -172,7 +161,17 @@ async def main_async():
 
         async def enter_new_zone_callback(line: str):
             await validationLogic.when_enter_new_zone(line, context) # add the context to the callback
-        await fileHelper.callback_on_zone_change(path_to_client_txt, enter_new_zone_callback)
+
+
+        async def whisper_callback(line: str):
+            from worlds.poe.poeClient.textUpdate import self_whisper_callback
+            await self_whisper_callback(line, context)
+            
+        async def goal_callback(line: str):
+            from worlds.poe.poeClient.textUpdate import self_goal_callback
+            await self_goal_callback(line, context)
+
+        await fileHelper.callback_on_file_change(path_to_client_txt, [enter_new_zone_callback, whisper_callback, goal_callback])
 
         print(f"Starting Main Loop...")
         await timer_loop()
@@ -181,7 +180,7 @@ async def main_async():
 
 if __name__ == '__main__':
     # Set the character name here or pass it as an argument
-    character_name = "merc_MY_FIREEE"  # Replace with your character name
+#    context.character_name = "merc_MY_FIREEE"  # Replace with your character name
 
     run()
 

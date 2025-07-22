@@ -1,15 +1,8 @@
 import asyncio
 import os
 import sys
-
-vendor_dir = os.path.join(os.path.dirname(__file__), "vendor")
-if vendor_dir not in sys.path:
-    sys.path.insert(0, vendor_dir)
-for subdir in os.listdir(vendor_dir):
-    full_path = os.path.join(vendor_dir, subdir)
-    if full_path not in sys.path:
-        if os.path.isdir(full_path):
-            sys.path.insert(0, full_path)
+from worlds.poe.poeClient import fileHelper
+fileHelper.load_vendor_modules()
 
 from pathlib import Path
 _debug = True
@@ -27,10 +20,11 @@ def safe_tts(text, filename, rate=250, volume=1, voice_id=None, overwrite=False)
     Path(filename).parent.mkdir(parents=True, exist_ok=True)
     try:
         import pyttsx3
-#        engine = pyttsx3.init()
         engine = None
         if sys.platform.startswith('win'):
-            engine = pyttsx3.init('sapi5')  # Use SAPI5 for Windows
+            import pythoncom
+            pythoncom.CoInitialize()
+            engine = pyttsx3.Engine('sapi5')
         else:
             engine = pyttsx3.init()
         if _debug:
@@ -44,6 +38,9 @@ def safe_tts(text, filename, rate=250, volume=1, voice_id=None, overwrite=False)
             print("[DEBUG] Voices available:", voices)
         engine.save_to_file(text, str(filename))
         engine.runAndWait()
+        engine.stop()
+        if sys.platform.startswith('win'):
+            pythoncom.CoUninitialize()
         if Path(filename).exists():
             print(f"[DEBUG] File created: {filename}")
         else:
@@ -56,13 +53,15 @@ def tts_blocking(text, filename, rate=250, volume=1, voice_id=None):
     pythoncom.CoInitialize()
     import pyttsx3
     Path(filename).parent.mkdir(parents=True, exist_ok=True)
-    engine = pyttsx3.init('sapi5')
+    engine = pyttsx3.Engine('sapi5')
     engine.setProperty('rate', rate)
     engine.setProperty('volume', volume)
     if voice_id is not None:
         engine.setProperty('voice', voice_id)
     engine.save_to_file(text, str(filename))
     engine.runAndWait()
+    engine.stop()
+    pythoncom.CoUninitialize()
 
 
 async def safe_tts_async(text, filename, rate=250, volume=1, voice_id=None):

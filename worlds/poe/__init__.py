@@ -95,11 +95,18 @@ class PathOfExileWorld(World):
         #          options.starting_character.option_shadow,
         #          options.starting_character.option_scion])
         
-        if options.gucci_hobo_mode.value == True:
+        if (options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_allow_one_slot_of_normal_rarity
+                or options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_no_non_unique_items):
             gear_upgrades = Items.get_gear_items(table=self.items_to_place)
             for item in gear_upgrades:
                 if "Magic" in item["category"] or "Rare" in item["category"]:
-                    self.items_to_place.pop(item["id"]) 
+                    self.items_to_place.pop(item["id"])
+
+        if (options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_no_non_unique_items):
+            for item in gear_upgrades:
+                if "Normal" in item["category"]:
+                    self.items_to_place.pop(item["id"])
+
         
         if options.gear_unlocks.value == False:
             gear_upgrades = Items.get_gear_items(table=self.items_to_place)
@@ -121,36 +128,58 @@ class PathOfExileWorld(World):
                 item_obj = self.remove_and_create_item_by_dict(item)        
                 self.multiworld.push_precollected(item_obj)
                 
-                
+        starting_character = ""
         if options.starting_character.value == options.starting_character.option_scion:
             item_obj = self.remove_and_create_item_by_name("Scion")
             self.multiworld.push_precollected(item_obj)
+            starting_character = "Scion"
 
         if options.starting_character.value == options.starting_character.option_marauder:
             item_obj = self.remove_and_create_item_by_name("Marauder")
             self.multiworld.push_precollected(item_obj)
+            starting_character = "Marauder"
 
         if options.starting_character.value == options.starting_character.option_duelist:
             item_obj = self.remove_and_create_item_by_name("Duelist")
             self.multiworld.push_precollected(item_obj)
-            
+            starting_character = "Duelist"
+
         if options.starting_character.value == options.starting_character.option_ranger:
             item_obj = self.remove_and_create_item_by_name("Ranger")
             self.multiworld.push_precollected(item_obj)
+            starting_character = "Ranger"
 
         if options.starting_character.value == options.starting_character.option_shadow:
             item_obj = self.remove_and_create_item_by_name("Shadow")
             self.multiworld.push_precollected(item_obj)
-            
+            starting_character = "Shadow"
+
         if options.starting_character.value == options.starting_character.option_witch:
             item_obj = self.remove_and_create_item_by_name("Witch")
             self.multiworld.push_precollected(item_obj)
+            starting_character = "Witch"
 
         if options.starting_character.value == options.starting_character.option_templar:
             item_obj = self.remove_and_create_item_by_name("Templar")
             self.multiworld.push_precollected(item_obj)
+            starting_character = "Templar"
 
+        temp_items_to_place = {}
+        # add ascendancy items.
+        char_classes = ["Marauder", "Ranger", "Witch", "Duelist", "Templar", "Shadow", "Scion"] if options.allow_unlock_of_other_characters.value else [starting_character]
+        for item in range(0, options.ascendancies_available_per_class.value):
+            for char_class in char_classes:
+                item: Items.ItemDict = self.random.choice(Items.get_ascendancy_class_items(char_class, table=self.items_to_place))
+                temp_items_to_place[item["id"]] = item
         
+        # remove all the other ascendancy items
+        for item in Items.get_ascendancy_items(table=self.items_to_place):
+            item_id = self.item_name_to_id[item["name"]]
+            self.items_to_place.pop(item_id, None)
+        
+        # add the temp items to place back to the items to place
+        for item_id, item_obj in temp_items_to_place.items():
+            self.items_to_place[item_id] = item_obj
 
 
     def create_regions(self):
@@ -158,30 +187,6 @@ class PathOfExileWorld(World):
         This method initializes the regions based on the acts defined in Regions.py.
         """
         options: PathOfExileOptions = self.options
-
-        temp_items_to_place = {}
-        # add ascendancy items.
-        for item in range(0, options.ascendancies_available_per_class.value):
-            for char_class in ["Marauder", "Ranger", "Witch", "Duelist", "Templar", "Shadow", "Scion"]:
-                item: Items.ItemDict = self.random.choice(Items.get_ascendancy_class_items(char_class, table=self.items_to_place))
-                temp_items_to_place[item["id"]] = item
-
-        # remove all the other ascendancy items
-        for item in Items.get_ascendancy_items(table=self.items_to_place):
-            item_id = self.item_name_to_id[item["name"]]
-            self.items_to_place.pop(item_id, None)
-            
-        # add the temp items to place back to the items to place
-        for item_id, item_obj in temp_items_to_place.items():
-            self.items_to_place[item_id] = item_obj
-
-        if options.allow_unlock_of_other_characters.value == False : 
-            for item in Items.get_character_class_items(table=self.items_to_place):
-                for ascendancy in Items.get_ascendancy_class_items(item["name"] + " Class", table=self.items_to_place):
-                    item_id = self.item_name_to_id[ascendancy["name"]]
-                    self.items_to_place.pop(item_id, None)
-                item_id = self.item_name_to_id[item["name"]]
-                self.items_to_place.pop(item_id, None)
 
         self.total_items_count = sum(item.get("count", 1) for item in self.items_to_place.values())
         

@@ -6,11 +6,103 @@ from pathlib import Path
 
 _debug = True
 client_txt_last_modified_time = None
+callbacks_on_file_change: list[callable] = []
+
+
+def load_vendor_modules():
+    import os
+    import sys
+    import importlib.util
+    import zipfile
+    import tempfile
+    import atexit
+    import shutil
+
+    # Prevent double-load
+    if getattr(sys, "_vendor_modules_loaded", False):
+        return
+    sys._vendor_modules_loaded = True
+
+    # Use consistent temp directory for vendor extraction
+    temp_dir = os.path.join(tempfile.gettempdir(), "archipelago_vendor")
+
+    # Default vendor path (source mode)
+    base_dir = os.path.dirname(__file__)
+    base_vendor_dir = os.path.join(base_dir, "vendor")
+
+    if not os.path.isdir(base_vendor_dir):
+        # Try to detect if running from zip
+        archive_path = os.path.abspath(__file__)
+        while not os.path.isfile(archive_path) and archive_path != os.path.dirname(archive_path):
+            archive_path = os.path.dirname(archive_path)
+
+        if zipfile.is_zipfile(archive_path):
+            print(f"[vendor] Extracting vendor from zip: {archive_path}")
+
+            # Clean up the temp dir first
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            os.makedirs(temp_dir, exist_ok=True)
+
+            with zipfile.ZipFile(archive_path, 'r') as z:
+                for name in z.namelist():
+                    if name.startswith("poe/poeClient/vendor/") and not name.endswith("/"):
+                        z.extract(name, temp_dir)
+
+            base_vendor_dir = os.path.join(temp_dir, "poe", "poeClient", "vendor")
+
+            # Clean up after exit
+            atexit.register(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        if not os.path.isdir(base_vendor_dir):
+            raise FileNotFoundError(f"Vendor directory could not be found or extracted: {base_vendor_dir}")
+
+    for entry in os.listdir(base_vendor_dir):
+        entry_path = os.path.join(base_vendor_dir, entry)
+
+        if entry in sys.modules:
+            continue
+
+        # Single-file module
+        if os.path.isfile(entry_path) and entry_path.endswith(".py"):
+            modname = os.path.splitext(entry)[0]
+            if modname in sys.modules:
+                continue
+            spec = importlib.util.spec_from_file_location(modname, entry_path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            sys.modules[modname] = mod
+            print(f"[vendor] Loaded single-file module '{modname}' from {entry_path}")
+
+        # Single-layer or double-layer package
+        elif os.path.isdir(entry_path):
+            single_layer = os.path.join(entry_path, "__init__.py")
+            double_layer = os.path.join(entry_path, entry, "__init__.py")
+
+            if os.path.isfile(double_layer):
+                if entry_path not in sys.path:
+                    sys.path.insert(0, entry_path)
+                spec = importlib.util.spec_from_file_location(entry, double_layer)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                sys.modules[entry] = mod
+                print(f"[vendor] Loaded double-layer package '{entry}' from {double_layer}")
+
+            elif os.path.isfile(single_layer):
+                if base_vendor_dir not in sys.path:
+                    sys.path.insert(0, base_vendor_dir)
+                spec = importlib.util.spec_from_file_location(entry, single_layer)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                sys.modules[entry] = mod
+                print(f"[vendor] Loaded single-layer package '{entry}' from {single_layer}")
+
+
 
 
 def safe_filename(filename: str) -> str:
     # Replace problematic characters with underscores
-    return re.sub(r"[^\w\-_\. ]", "_", filename)
+    return re.sub(r"[^\w\-_\. ]", "", filename)
 
 def get_last_zone_log(filepath: Path, maxlines: int = 100 ) -> str:
     # read the last `maxlines` lines from the file, and returns the most recent line that contains "Entered" or "Left"
@@ -31,10 +123,11 @@ def get_last_zone_log(filepath: Path, maxlines: int = 100 ) -> str:
     return ""
 
 
-async def callback_on_zone_change(filepath: Path, async_callback: callable):
+async def callback_on_file_change(filepath: Path, async_callbacks: list[callable]):
     async def zone_change_callback(line: str):
-        if "] : You have entered" in line:
-            await async_callback(line)
+        for callback in async_callbacks:
+            if callable(callback):
+                await callback(line)
     await callback_on_file_line_change(filepath, zone_change_callback)
 
 

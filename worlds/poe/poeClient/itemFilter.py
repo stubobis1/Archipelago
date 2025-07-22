@@ -23,9 +23,9 @@ MinimapIcon 0 Green UpsideDownHouse
 PlayEffect Cyan
 """
 invalid_style_string = f"""SetFontSize 45
-SetTextColor 255 0 0 0
-SetBorderColor 255 0 0 0
-SetBackgroundColor 255 0 0 0
+SetTextColor 255 255 0 0
+SetBorderColor 255 255 0 0
+SetBackgroundColor 255 255 0 0
 """
 _debug = True
 base_item_to_relative_wav_path = {}
@@ -35,7 +35,7 @@ def generate_item_filter_block(base_type_name, alert_sound, style_string=default
         return ""
     if not Path.exists(filter_file_dir / alert_sound):
         print(f"[ERROR] Alert sound '{alert_sound}' does not exist in {filter_sounds_path}.")
-        return ""
+        return generate_item_filter_block_without_sound(base_type_name)
     return f"""
 {start_item_filter_block}
 Show 
@@ -44,6 +44,30 @@ BaseType == "{base_type_name}"
 CustomAlertSound "{alert_sound}" 300
 {end_item_filter_block}"""
 
+def generate_item_filter_block_without_sound(base_type_name, style_string=default_style_string):
+    return f"""
+{start_item_filter_block}
+Show 
+BaseType == "{base_type_name}"
+{style_string}
+{end_item_filter_block}"""
+
+
+def generate_invalid_item_filter_block(alert_sound):
+    if not Path.exists(filter_file_dir / alert_sound):
+        print(f"[ERROR] Alert sound '{alert_sound}' does not exist in {filter_sounds_path}.")
+        return generate_invalid_item_filter_block_without_sound()
+    return f"""
+Show 
+{invalid_style_string}
+CustomAlertSound "{alert_sound}" 300
+"""
+
+def generate_invalid_item_filter_block_without_sound():
+    return f"""
+    Show 
+    {invalid_style_string}
+    """
 
 def write_item_filter(item_filter:str, item_filter_import=base_item_filter_import, file_path: Path = filter_file_path):
     if item_filter_import is not None:

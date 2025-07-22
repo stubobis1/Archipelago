@@ -137,6 +137,7 @@ class Item:
     inventoryId: str
     properties: List[ItemProperty] = field(default_factory=list)
     socketedItems: List["Item"] = field(default_factory=list)
+    support: Optional[bool] = None
     # ...other fields as needed...
 
 @dataclass
@@ -206,7 +207,7 @@ def debug_request(headers, url):
     print(f"[DEBUG] GET {url}")
     print(f"[DEBUG] Headers: {headers}")
 
-async def get_character(character_name: str, token: str = access_token, retry_count: int = 0, max_retry_count: int = 3) -> Optional[CharacterResponse]:
+async def get_character(character_name: str, token: str = access_token,  retry_count: int = 0, max_retry_count: int = 3) -> Optional[CharacterResponse]:
     """
     Fetch character data from the Path of Exile API.
     :param character_name: The name of the character.
@@ -235,7 +236,19 @@ async def get_character(character_name: str, token: str = access_token, retry_co
 
 def parse_character_response(data: dict) -> CharacterResponse:
     # Helper to parse the API response into dataclasses
-    def parse_item(item):
+    def parse_item_property(prop: dict) -> ItemProperty:
+        return ItemProperty(
+            name=prop.get("name", ""),
+            values=prop.get("values", []),
+            displayMode=prop.get("displayMode", 0),
+            type=prop.get("type", 0),
+            progress=prop.get("progress"),
+            suffix=prop.get("suffix"),
+            augmented=prop.get("augmented"),
+            hashes=prop.get("hashes"),
+        )
+
+    def parse_item(item: dict) -> Item:
         return Item(
             id=item.get("id", ""),
             name=item.get("name", ""),
@@ -245,7 +258,14 @@ def parse_character_response(data: dict) -> CharacterResponse:
             ilvl=item.get("ilvl", 0),
             identified=item.get("identified", False),
             inventoryId=item.get("inventoryId", ""),
-            # ...add more fields as needed...
+            properties=[parse_item_property(prop) for prop in item.get("properties", [])],
+            socketedItems=[parse_item(si) for si in item.get("socketedItems", [])],
+            support=item.get("support", None)  # Optional field, can be None
+            # Add other fields as needed, e.g.:
+            # explicitMods=item.get("explicitMods", []),
+            # implicitMods=item.get("implicitMods", []),
+            # corrupted=item.get("corrupted", False),
+            # etc.
         )
     char = data["character"]
     equipment = [parse_item(i) for i in char.get("equipment", [])]
