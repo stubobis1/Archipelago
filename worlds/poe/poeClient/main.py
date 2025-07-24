@@ -89,9 +89,17 @@ async def async_load(ctx: "PathOfExileContext" = None):
 
 
     # Doesn't work rn  ¯\_(ツ)_/¯
+    
     #thread = threading.Thread(target=tts.generate_tts_from_missing_locations, args=(ctx,)) # comma to make it a tuple
     #thread.start()
-    tts.generate_tts_tasks_from_missing_locations(ctx)
+    if threading.current_thread() is threading.main_thread():
+        print("Running in the main thread!")
+    else:
+        print("Not running in the main thread.")
+
+    tts.generate_tts_from_missing_locations(ctx)
+    
+    #tts.generate_tts_tasks_from_missing_locations(ctx)
 
     itemFilter.update_item_filter_from_context(ctx)
 
@@ -112,13 +120,13 @@ async def timer_loop():
             validate_char()
             await inputHelper.send_poe_text("/itemfilter __ap")
 
-
-        if ticks % 1 < 0.1:
-            if tts.tasks:
-                if _debug:
-                    print(f"[DEBUG] Running TTS tasks: {len(tts.tasks)} tasks pending.")
-                await asyncio.gather(*tts.tasks[:batch_size])
-                tts.tasks = tts.tasks[batch_size:]
+        if False: # debugging different TTS strategies
+            if ticks % 1 < 0.1:
+                if tts.tasks:
+                    if _debug:
+                        print(f"[DEBUG] Running TTS tasks: {len(tts.tasks)} tasks pending.")
+                    await asyncio.gather(*tts.tasks[:batch_size])
+                    tts.tasks = tts.tasks[batch_size:]
             
             
 

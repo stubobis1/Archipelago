@@ -35,6 +35,7 @@ def safe_tts(text, filename, rate=250, volume=1, voice_id=None, overwrite=False)
         return
     Path(filename).parent.mkdir(parents=True, exist_ok=True)
     with tts_lock:  # Ensure thread-safe access to TTS generation
+        pythoncom.CoInitialize()  # Initialize COM for TTS
         try:
             if _debug:
                 print(f"[DEBUG] Initializing TTS engine for text: {text}")
@@ -55,12 +56,12 @@ def safe_tts(text, filename, rate=250, volume=1, voice_id=None, overwrite=False)
                 print(f"[ERROR] File NOT created: {filename}")
         except Exception as e:
             print(f"[ERROR] Exception during TTS: {e}")
+        pythoncom.CoUninitialize()  # Uninitialize COM after TTS
 
 async def safe_tts_async(text, filename, rate=250, volume=1, voice_id=None):
     if _debug:
         print(f"[DEBUG] Async TTS: text='{text}', filename='{filename}'")
-
-    safe_tts(text, filename, rate, volume, voice_id)
+    await asyncio.to_thread(safe_tts, text, filename, rate, volume, voice_id)
 
 def generate_tts_from_missing_locations(ctx: "PathOfExileContext", WPM: int = WPM) -> None:
     """Generate TTS files for missing locations."""
