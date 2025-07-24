@@ -72,12 +72,10 @@ def call_tts_subprocess(text_files: list[tuple[str, str]]):
         return
 
     import tempfile
+    import pickle
 
-    # Convert tuples to lists for JSON compatibility
-    text_files_json = [list(pair) for pair in text_files]
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".tts", mode="w", encoding="utf-8") as f:
-        json.dump(str(text_files_json), f)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".tts", mode="wb") as f:
+        pickle.dump(text_files, f)
         tts_path = f.name
 
     tts_script = str(fileHelper.tts_subprocess_path)
