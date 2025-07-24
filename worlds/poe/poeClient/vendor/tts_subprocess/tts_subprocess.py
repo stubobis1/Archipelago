@@ -74,15 +74,16 @@ def tts_generate(text_and_path: list[(str, str)], rate=WPM, volume=1, voice_id=N
 
 if __name__ == "__main__":
     import sys
-    import pickle
+    import json
 
-    # this will take an array of string tuples, with the first element being the text to convert to speech, and the second element being the filename to save it to
     pairs = []
     if len(sys.argv) > 1:
-        pairs = pickle.loads(sys.argv[1].encode('utf-8'))
-        if not isinstance(pairs, list) or not all(isinstance(pair, tuple) and len(pair) == 2 for pair in pairs):
-            print("Invalid input format. Expected a list of tuples (text, filename).")
-            sys.exit(1)
+        tts_file = sys.argv[1]
+        with open(tts_file, "r", encoding="utf-8") as f:
+            pairs = json.load(f)
+        # pairs is now a list of [text, filename] lists
+        # Convert to tuples if needed
+        pairs = [tuple(pair) for pair in pairs]
     else:  # generate mock data
         pairs = [(f"Hello {i}", f"test{i}.wav") for i in range(100)]
     tts_generate(pairs)

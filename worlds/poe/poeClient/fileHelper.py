@@ -8,7 +8,7 @@ _debug = True
 client_txt_last_modified_time = None
 callbacks_on_file_change: list[callable] = []
 
-
+tts_subprocess_path = Path(__file__).parent / "vendor" / "tts_subprocess"/ "tts_subprocess.py"
 def load_vendor_modules():
     import os
     import sys
@@ -25,7 +25,7 @@ def load_vendor_modules():
 
     # Use consistent temp directory for vendor extraction
     temp_dir = os.path.join(tempfile.gettempdir(), "archipelago_vendor")
-
+    tts_subprocess_path = Path(temp_dir) / "poe" / "poeClient" / "vendor" / "tts_subprocess" / "tts_subprocess.py"
     # Default vendor path (source mode)
     base_dir = os.path.dirname(__file__)
     base_vendor_dir = os.path.join(base_dir, "vendor")
