@@ -23,14 +23,14 @@ import sys
 
 _debug = True
 WPM = 250  # Default words per minute for TTS
-tasks = []  # List to hold async tasks for TTS generation
 
 def get_item_name_tts_text(ctx: "PathOfExileContext", network_item) -> str:
-    return ctx.player_names[network_item.player] + " ... " + ctx.item_names.lookup_in_slot(network_item.item,
-                                                                                               network_item.player)
+    return (ctx.player_names[network_item.player] +
+            " ... " + ctx.item_names.lookup_in_slot(network_item.item,network_item.player))
 
 
-def generate_tts_tuples_from_missing_locations(ctx: "PathOfExileContext", WPM: int = WPM) -> list[(str, str)]:
+
+def generate_tts_tuples_from_missing_locations(ctx: "PathOfExileContext") -> list[(str, str)]:
     """Generate TTS tuples for missing locations."""
     if not ctx or not ctx.missing_locations:
         print("[DEBUG] No missing locations to generate TTS for.")
@@ -52,20 +52,12 @@ def generate_tts_tuples_from_missing_locations(ctx: "PathOfExileContext", WPM: i
         
 
 
+def safe_tts(text: str, filename: Path|str, rate: int = WPM, voice_id=None):
+    if not isinstance(filename, str):
+        filename = str(filename)
+    call_tts_subprocess([(text, filename)], WPM=rate, voice_id=voice_id) # a list of a single tuple, yeah I know.
 
-#def run_tts_subprocess(text_files: list[(str,str)], WPM, rate=250, volume=1):
-def run_tts_subprocess():
-    """Run the TTS subprocess to generate audio files."""
-    import subprocess
-    import sys
-    
-    if fileHelper.tts_subprocess_path.exists():
-        subprocess.run([sys.executable, str(fileHelper.tts_subprocess_path)])
-
-    # call the subprocess to generate TTS audio files
-    
-
-def call_tts_subprocess(text_files: list[tuple[str, str]]):
+def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=None):
     """Call the TTS subprocess to generate audio files."""
     if not text_files:
         print("[DEBUG] No text files to process for TTS.")
@@ -74,8 +66,15 @@ def call_tts_subprocess(text_files: list[tuple[str, str]]):
     import tempfile
     import pickle
 
+    # Bundle all arguments into a dict for pickle
+    payload = {
+        "text_files": text_files,
+        "WPM": WPM,
+        "voice_id": voice_id
+    }
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".tts", mode="wb") as f:
-        pickle.dump(text_files, f)
+        pickle.dump(payload, f)
         tts_path = f.name
 
     tts_script = str(fileHelper.tts_subprocess_path)
@@ -87,8 +86,32 @@ def call_tts_subprocess(text_files: list[tuple[str, str]]):
 
     # Optionally clean up
     os.remove(tts_path)
+
+
+async def async_call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=None):
+    """Asynchronously call the TTS subprocess to generate audio files."""
+    if not text_files:
+        print("[DEBUG] No text files to process for TTS.")
+        return
     
     
+    import tempfile
+    import pickle
+
+    # Bundle all arguments into a dict for pickle
+    payload = {
+        "text_files": text_files,
+        "WPM": WPM,
+        "voice_id": voice_id
+    }
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".tts", mode="wb") as f:
+        pickle.dump(payload, f)
+        tts_path = f.name
+
+
+    
+    
+
 if __name__ == "__main__":
     import worlds.poe.Items as Items
     # mock a context with missing locations, player names, and item lookup and such
@@ -112,7 +135,7 @@ if __name__ == "__main__":
 
     ctx = mockCtx()
     # Generate TTS tuples
-    tts_tuples = generate_tts_tuples_from_missing_locations(ctx, WPM=WPM)
+    tts_tuples = generate_tts_tuples_from_missing_locations(ctx)
 
     call_tts_subprocess(tts_tuples)
 

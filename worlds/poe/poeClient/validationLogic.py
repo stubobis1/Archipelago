@@ -227,7 +227,7 @@ async def update_filter_to_invalid_char_filter(errors: list[str]):
     else:
         error_text = errors[0]
     filename = f"{fileHelper.short_hash(error_text)}_{tts.WPM}.wav" # this could be a long text, so we use a hash
-    await tts.safe_tts_async(
+    tts.safe_tts(
         text=f"YOU ARE OUT OF LOGIC: {error_text}",
         filename=itemFilter.filter_sounds_path / f"{filename}",
         rate=tts.WPM

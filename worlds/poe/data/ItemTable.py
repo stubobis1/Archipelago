@@ -8,7 +8,7 @@ from BaseClasses import ItemClassification
 
 
 item_array = [
-{"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Knockback Support"},
+{"category":[""],"classification":ItemClassification.filler,"name":"placeholder"},
 {"category":["Flask","Normal"],"classification":ItemClassification.progression,"name":"Progressive Flask Unlock Slot","count":5},
 {"category":["Flask","Magic"],"classification":ItemClassification.progression,"name":"Progressive Magic Flask Unlock","count":5},
 {"category":["Flask","Unique"],"classification":ItemClassification.filler,"name":"Progressive Unique Flask Unlock","count":5},
@@ -415,7 +415,7 @@ item_array = [
 {"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Ballista Totem Support"},
 {"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Earthbreaker Support"},
 {"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Flamewood Support"},
-
+{"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Knockback Support"},
 {"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Life Gain on Hit Support"},
 {"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Lifetap Support"},
 {"category":["SupportGem"],"reqLevel": 8,"classification":ItemClassification.filler,"name":"Maim Support"},

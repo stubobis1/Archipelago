@@ -77,13 +77,18 @@ if __name__ == "__main__":
     import pickle
 
     pairs = []
+    WPM = 250
+    voice_id = None
     if len(sys.argv) > 1:
         tts_file = sys.argv[1]
         with open(tts_file, "rb") as f:
-            pairs = pickle.load(f)
+            payload = pickle.load(f)
+            pairs = payload.get("text_files", [])
+            WPM = payload.get("WPM", 250)
+            voice_id = payload.get("voice_id", None)
     else:  # generate mock data
         pairs = [(f"Hello {i}", f"test{i}.wav") for i in range(100)]
-    tts_generate(pairs)
+    tts_generate(pairs, rate=WPM, voice_id=voice_id)
 
 # working??
 #    asyncio.run(async_test())
