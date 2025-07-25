@@ -78,26 +78,59 @@ def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=Non
     tts_script = str(fileHelper.tts_subprocess_path)
     python_exe = sys.executable
 
+
+    print("[DEBUG] Calling TTS subprocess: " + tts_script)
+    print("[DEBUG] Calling TTS subprocess: " + tts_script)
+    print("[DEBUG] Calling TTS subprocess: " + tts_script)
+    print(f"[DEBUG] {os.path.dirname(os.path.abspath(__file__))}")
     print(f"[DEBUG] About to start subprocess:")
     print(f"[DEBUG] Python exe: {python_exe}")
     print(f"[DEBUG] Script path: {tts_script}")
     print(f"[DEBUG] Temp file: {tts_path}")
-#    print(f"[DEBUG] Payload: {payload}")
     print(f"[DEBUG] Does tts_subprocess exist? {os.path.exists(fileHelper.tts_subprocess_path)}")
 
-    # get current working directory
+    # NEW: Log environment details
     script_dir = os.path.dirname(os.path.abspath(__file__))
     print(f"[DEBUG] Script directory: {script_dir}")
-    # set the cwd to the directory of the script
+    print(f"[DEBUG] Current working directory: {os.getcwd()}")
+    print(f"[DEBUG] Parent process sys.path: {sys.path}")
+    print(f"[DEBUG] PYTHONPATH env var: {os.environ.get('PYTHONPATH', 'Not set')}")
+    print(f"[DEBUG] Virtual env: {os.environ.get('VIRTUAL_ENV', 'Not set')}")
+
+    #change
+
+    # NEW: Test if we can import the problematic module in parent process
+    try:
+        from worlds.poe.poeClient import fileHelper as test_fh
+        print(f"[DEBUG] Parent can import fileHelper: SUCCESS")
+    except Exception as e:
+        print(f"[DEBUG] Parent CANNOT import fileHelper: {e}")
+
+
+
+    # NEW: Set explicit working directory
+    tts_script_dir = os.path.dirname(os.path.abspath(__file__))  # tts.py directory
+
+    print(f"[DEBUG] Setting subprocess cwd to: {tts_script_dir}")
+
     process = subprocess.Popen(
         [python_exe, tts_script, tts_path],
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
+        cwd=tts_script_dir,  # Use tts.py directory instead of os.getcwd()
     )
 
     print(f"[DEBUG] Started TTS subprocess with PID {process.pid} for {len(text_files)} files")
     print(f"[DEBUG] Check {Path.home() / 'Desktop' / 'tts_subproc.txt'} for progress")
-    print(f"[DEBUG] Output directory: C:/Users/StuBob/Documents/My Games/Path of Exile/apsound/")
+    
+    # NEW: Wait a moment and check if process died immediately
+    import time
+    time.sleep(0.5)
+    returncode = process.poll()
+    if returncode is not None:
+        print(f"[ERROR] Subprocess exited immediately with code: {returncode}")
+    else:
+        print(f"[DEBUG] Subprocess still running after 0.5s")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,11 @@
+# Add this as the VERY FIRST LINES of tts_subprocess.py (before any imports)
+try:
+    with open(r"C:\Users\StuBob\Desktop\subprocess_started.txt", "a") as f:
+        f.write("Subprocess script started execution\n")
+except:
+    pass
+
+import sys
 import os
 import typing
 import asyncio
@@ -6,27 +14,14 @@ import sys
 from pathlib import Path
 
 
-# Now try the imports
-try:
-    from worlds.poe.poeClient import fileHelper
-    fileHelper.load_vendor_modules()
-    print("[DEBUG] fileHelper import: SUCCESS")
-except ImportError as e:
-    print(f"[ERROR] fileHelper import failed: {e}")
-
-    temp_log_path = Path.home() / "Desktop" / "tts_subproc2.txt"
-    with open(temp_log_path, "a", encoding="utf-8") as f:
-        f.write("[DEBUG] TTS subprocess started\n")
-    sys.exit(1)
 
 
-if typing.TYPE_CHECKING:
-    from worlds.poe.poeClient.vendor.pyttsx3 import pyttsx3, pythoncom
-    from worlds.poe.poeClient.vendor.pyttsx3.pyttsx3.engine import Engine
-    from worlds.poe.Client import PathOfExileContext
-else:
-    import pyttsx3
-    import pythoncom
+#if typing.TYPE_CHECKING:
+#    from worlds.poe.poeClient.vendor.pyttsx3 import pyttsx3, pythoncom
+#    from worlds.poe.poeClient.vendor.pyttsx3.pyttsx3.engine import Engine
+#    from worlds.poe.Client import PathOfExileContext
+
+
 
 
 _debug = True
@@ -84,9 +79,24 @@ def tts_generate(text_and_path: list[(str, str)], rate=WPM, volume=1, voice_id=N
 
 
 if __name__ == "__main__":
-    import sys
-    import os
 
+        
+    # Now try the imports
+    try:
+        from worlds.poe.poeClient import fileHelper
+        fileHelper.load_vendor_modules()
+        print("[DEBUG] fileHelper import: SUCCESS")
+    except ImportError as e:
+        print(f"[ERROR] fileHelper import failed: {e}")
+
+        temp_log_path = Path.home() / "Desktop" / "tts_subproc2.txt"
+        with open(temp_log_path, "a", encoding="utf-8") as f:
+            f.write("[DEBUG] TTS subprocess started\n")
+    
+
+    
+    import pyttsx3
+    import pythoncom
 
     print(f"[DEBUG] Working directory: {os.getcwd()}")
     print(f"[DEBUG] Python executable: {sys.executable}")
