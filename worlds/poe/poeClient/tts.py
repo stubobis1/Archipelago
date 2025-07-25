@@ -131,13 +131,15 @@ def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=Non
     print(f"_____________________________________________________________________")
     print(f"_____________________________________________________________________")
     print(f"_____________________________________________________________________")
-    
+    temp = os.getcwd()
+    os.chdir(tts_script_dir)  # Change to the directory of tts.py
     process = subprocess.Popen(
         [python_exe, tts_script, tts_path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         cwd=tts_script_dir,  # Use tts.py directory instead of os.getcwd()
     )
+    os.chdir(temp)
 
     print(f"[DEBUG] Started TTS subprocess with PID {process.pid} for {len(text_files)} files")
     print(f"[DEBUG] Check {Path.home() / 'Desktop' / 'tts_subproc.txt'} for progress")
