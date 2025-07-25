@@ -1,13 +1,12 @@
+import os
+import typing
 import asyncio
 import threading
 
-from worlds.poe.poeClient import fileHelper
 
-fileHelper.load_vendor_modules()
 
-from worlds.poe.poeClient import itemFilter
-import os
-import typing
+
+
 
 if typing.TYPE_CHECKING:
     from worlds.poe.poeClient.vendor.pyttsx3 import pyttsx3, pythoncom
@@ -75,11 +74,36 @@ def tts_generate(text_and_path: list[(str, str)], rate=WPM, volume=1, voice_id=N
 
 if __name__ == "__main__":
     import sys
+    import os
+    
+    # Ensure we can find the modules
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    archipelago_root = os.path.abspath(os.path.join(script_dir, "../../../../.."))
+    
+    if archipelago_root not in sys.path:
+        sys.path.insert(0, archipelago_root)
+    
+    # Set working directory to Archipelago root
+    os.chdir(archipelago_root)
+    
+    print(f"[DEBUG] Script directory: {script_dir}")
+    print(f"[DEBUG] Archipelago root: {archipelago_root}")
+    print(f"[DEBUG] Working directory: {os.getcwd()}")
+    print(f"[DEBUG] Python executable: {sys.executable}")
+    
+    # Now try the imports
+    try:
+        from worlds.poe.poeClient import fileHelper
+        print("[DEBUG] fileHelper import: SUCCESS")
+    except ImportError as e:
+        print(f"[ERROR] fileHelper import failed: {e}")
+        sys.exit(1)
+    
     import pickle
     import logging
 
     temp_log_path = Path.home() / "Desktop" / "tts_subproc2.txt"
-    with open(temp_log_path, "w", encoding="utf-8") as f:
+    with open(temp_log_path, "a", encoding="utf-8") as f:
         f.write("[DEBUG] TTS subprocess started\n")
 
     # Redirect all print output to Desktop/tts_subproc.txt
@@ -93,6 +117,25 @@ if __name__ == "__main__":
 
     print("[DEBUG] Starting TTS subprocess...")
 
+    # Add this right after the sys.path fix above
+    print(f"[DEBUG] Python executable: {sys.executable}")
+    print(f"[DEBUG] Python version: {sys.version}")
+    print(f"[DEBUG] Working directory: {os.getcwd()}")
+    print(f"[DEBUG] sys.path: {sys.path}")
+
+    
+    
+    try:
+        from worlds.poe.poeClient import fileHelper
+        from worlds.poe.poeClient import itemFilter
+        print("[DEBUG] Import fileHelper: SUCCESS")
+    except ImportError as e:
+        print(f"[ERROR] Import fileHelper failed: {e}")
+    #    sys.exit(1)
+
+    fileHelper.load_vendor_modules()
+    
+    
     pairs = []
     WPM = 250
     voice_id = None
