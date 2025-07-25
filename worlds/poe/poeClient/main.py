@@ -86,8 +86,10 @@ async def async_load(ctx: "PathOfExileContext" = None):
     
     global context
     ctx = ctx if ctx is not None else context
-
-    tts.call_tts_subprocess(tts.generate_tts_tuples_from_missing_locations(ctx)) # TODO: ADD WPM AND VOICE ID HERE
+    if _debug:
+        print(f"[DEBUG] making tts... ")
+    tuples = tts.generate_tts_tuples_from_missing_locations(ctx)
+    tts.call_tts_subprocess(tuples)
 
     itemFilter.update_item_filter_from_context(ctx)
 

@@ -20,6 +20,7 @@ else:
 from pathlib import Path
 
 _debug = True
+_redirect_stdout = True  # Set to True if you want to redirect stdout to a file
 WPM = 250  # Default words per minute for TTS
 tasks = []  # List to hold async tasks for TTS generation
 engine: "pyttsx3.Engine" = None  # TTS engine instance
@@ -75,20 +76,45 @@ def tts_generate(text_and_path: list[(str, str)], rate=WPM, volume=1, voice_id=N
 if __name__ == "__main__":
     import sys
     import pickle
+    import logging
+
+    # Redirect all print output to Desktop/tts_subproc.txt
+    if _redirect_stdout:
+        log_path = Path.home() / "Desktop" / "tts_subproc.txt"
+        sys.stdout = open(log_path, "a", encoding="utf-8")
+        sys.stderr = sys.stdout
+        logging.basicConfig(filename=log_path, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
+    print("[DEBUG] Starting TTS subprocess...")
 
     pairs = []
     WPM = 250
     voice_id = None
+    tts_file = None
+    
     if len(sys.argv) > 1:
         tts_file = sys.argv[1]
         with open(tts_file, "rb") as f:
             payload = pickle.load(f)
-            pairs = payload.get("text_files", [])
+            pairs = payload.get("text_file_pair", [])
             WPM = payload.get("WPM", 250)
             voice_id = payload.get("voice_id", None)
+            print("[DEBUG] Loaded TTS pairs from file:", tts_file)
+            print("[DEBUG] Pairs:", pairs)
+        
+        # Clean up the temp file after reading
+        try:
+            os.remove(tts_file)
+            print(f"[DEBUG] Cleaned up temp file: {tts_file}")
+        except Exception as e:
+            print(f"[WARNING] Could not remove temp file {tts_file}: {e}")
+            
     else:  # generate mock data
         pairs = [(f"Hello {i}", f"test{i}.wav") for i in range(100)]
+    
     tts_generate(pairs, rate=WPM, voice_id=voice_id)
+    print("[DEBUG] TTS subprocess completed")
 
 # working??
 #    asyncio.run(async_test())

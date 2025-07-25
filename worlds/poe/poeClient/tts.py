@@ -28,8 +28,6 @@ def get_item_name_tts_text(ctx: "PathOfExileContext", network_item) -> str:
     return (ctx.player_names[network_item.player] +
             " ... " + ctx.item_names.lookup_in_slot(network_item.item,network_item.player))
 
-
-
 def generate_tts_tuples_from_missing_locations(ctx: "PathOfExileContext") -> list[(str, str)]:
     """Generate TTS tuples for missing locations."""
     if not ctx or not ctx.missing_locations:
@@ -49,10 +47,8 @@ def generate_tts_tuples_from_missing_locations(ctx: "PathOfExileContext") -> lis
             itemFilter.base_item_id_to_relative_wav_path[base_item_location_id] = relative_path
             tts_tuples.append((item_text, full_path))
     return tts_tuples
-        
 
-
-def safe_tts(text: str, filename: Path|str, rate: int = WPM, voice_id=None):
+def generate_tts(text: str, filename: Path|str, rate: int = WPM, voice_id=None):
     if not isinstance(filename, str):
         filename = str(filename)
     call_tts_subprocess([(text, filename)], WPM=rate, voice_id=voice_id) # a list of a single tuple, yeah I know.
@@ -65,52 +61,34 @@ def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=Non
 
     import tempfile
     import pickle
+    import subprocess
+    import sys
+    import os
 
-    # Bundle all arguments into a dict for pickle
     payload = {
-        "text_files": text_files,
+        "text_file_pair": text_files,
         "WPM": WPM,
         "voice_id": voice_id
     }
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".tts", mode="wb") as f:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".ap_tts", mode="wb") as f:
         pickle.dump(payload, f)
         tts_path = f.name
 
     tts_script = str(fileHelper.tts_subprocess_path)
     python_exe = sys.executable
 
-    result = subprocess.run([python_exe, tts_script, tts_path])
-    if result.returncode != 0:
-        print(f"[ERROR] TTS subprocess failed with code {result.returncode}")
-
-    # Optionally clean up
-    os.remove(tts_path)
-
-
-async def async_call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=None):
-    """Asynchronously call the TTS subprocess to generate audio files."""
-    if not text_files:
-        print("[DEBUG] No text files to process for TTS.")
-        return
+    process = subprocess.Popen(
+        [python_exe, tts_script, tts_path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
     
+    print(f"[DEBUG] Started TTS subprocess with PID {process.pid}")
     
-    import tempfile
-    import pickle
+    # Don't remove the temp file immediately - let the subprocess handle cleanup
+    # The subprocess should delete the file after reading it
 
-    # Bundle all arguments into a dict for pickle
-    payload = {
-        "text_files": text_files,
-        "WPM": WPM,
-        "voice_id": voice_id
-    }
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".tts", mode="wb") as f:
-        pickle.dump(payload, f)
-        tts_path = f.name
-
-
-    
-    
 
 if __name__ == "__main__":
     import worlds.poe.Items as Items
