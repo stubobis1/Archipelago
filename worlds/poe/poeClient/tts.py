@@ -113,6 +113,25 @@ def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=Non
 
     print(f"[DEBUG] Setting subprocess cwd to: {tts_script_dir}")
 
+
+
+    print(f"_____________________________________________________________________")
+    print(f"_____________________________________________________________________")
+    print(f"_____________________________________________________________________")
+    print(f"_____________________________________________________________________")
+    
+    
+    print(f"[DEBUG] Starting TTS subprocess with python path: {python_exe}")
+    print(f"[DEBUG] TTS script path: {tts_script}")
+    print(f"[DEBUG] Temp file path: {tts_path}")
+    
+    
+    
+    print(f"_____________________________________________________________________")
+    print(f"_____________________________________________________________________")
+    print(f"_____________________________________________________________________")
+    print(f"_____________________________________________________________________")
+    
     process = subprocess.Popen(
         [python_exe, tts_script, tts_path],
         stdout=subprocess.DEVNULL,
