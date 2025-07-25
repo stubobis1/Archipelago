@@ -78,9 +78,14 @@ if __name__ == "__main__":
     import pickle
     import logging
 
+    temp_log_path = Path.home() / "Desktop" / "tts_subproc2.txt"
+    with open(temp_log_path, "w", encoding="utf-8") as f:
+        f.write("[DEBUG] TTS subprocess started\n")
+
     # Redirect all print output to Desktop/tts_subproc.txt
     if _redirect_stdout:
         log_path = Path.home() / "Desktop" / "tts_subproc.txt"
+
         sys.stdout = open(log_path, "a", encoding="utf-8")
         sys.stderr = sys.stdout
         logging.basicConfig(filename=log_path, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')

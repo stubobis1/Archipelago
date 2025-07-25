@@ -17,6 +17,7 @@ import asyncio
 import threading
 from pynput import keyboard
 from pathlib import Path
+import time
 
 
 _generate_wav = True  # Set to True if you want to generate the wav files

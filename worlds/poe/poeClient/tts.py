@@ -78,16 +78,23 @@ def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=Non
     tts_script = str(fileHelper.tts_subprocess_path)
     python_exe = sys.executable
 
+    print(f"[DEBUG] About to start subprocess:")
+    print(f"[DEBUG] Python exe: {python_exe}")
+    print(f"[DEBUG] Script path: {tts_script}")
+    print(f"[DEBUG] Temp file: {tts_path}")
+    print(f"[DEBUG] Payload: {payload}")
+    print(f"[DEBUG] Does tts_subprocess exist? {os.path.exists(fileHelper.tts_subprocess_path)}")
+
+    # Don't wait and check - just start and continue
     process = subprocess.Popen(
         [python_exe, tts_script, tts_path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
-    
-    print(f"[DEBUG] Started TTS subprocess with PID {process.pid}")
-    
-    # Don't remove the temp file immediately - let the subprocess handle cleanup
-    # The subprocess should delete the file after reading it
+
+    print(f"[DEBUG] Started TTS subprocess with PID {process.pid} for {len(text_files)} files")
+    print(f"[DEBUG] Check {Path.home() / 'Desktop' / 'tts_subproc.txt'} for progress")
+    print(f"[DEBUG] Output directory: C:/Users/StuBob/Documents/My Games/Path of Exile/apsound/")
 
 
 if __name__ == "__main__":
