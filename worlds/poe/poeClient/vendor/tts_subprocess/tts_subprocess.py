@@ -2,10 +2,22 @@ import os
 import typing
 import asyncio
 import threading
+import sys
+from pathlib import Path
 
 
+# Now try the imports
+try:
+    from worlds.poe.poeClient import fileHelper
+    fileHelper.load_vendor_modules()
+    print("[DEBUG] fileHelper import: SUCCESS")
+except ImportError as e:
+    print(f"[ERROR] fileHelper import failed: {e}")
 
-
+    temp_log_path = Path.home() / "Desktop" / "tts_subproc2.txt"
+    with open(temp_log_path, "a", encoding="utf-8") as f:
+        f.write("[DEBUG] TTS subprocess started\n")
+    sys.exit(1)
 
 
 if typing.TYPE_CHECKING:
@@ -16,7 +28,6 @@ else:
     import pyttsx3
     import pythoncom
 
-from pathlib import Path
 
 _debug = True
 _redirect_stdout = True  # Set to True if you want to redirect stdout to a file
@@ -75,29 +86,12 @@ def tts_generate(text_and_path: list[(str, str)], rate=WPM, volume=1, voice_id=N
 if __name__ == "__main__":
     import sys
     import os
-    
-    # Ensure we can find the modules
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    archipelago_root = os.path.abspath(os.path.join(script_dir, "../../../../.."))
-    
-    if archipelago_root not in sys.path:
-        sys.path.insert(0, archipelago_root)
-    
-    # Set working directory to Archipelago root
-    os.chdir(archipelago_root)
-    
-    print(f"[DEBUG] Script directory: {script_dir}")
-    print(f"[DEBUG] Archipelago root: {archipelago_root}")
+
+
     print(f"[DEBUG] Working directory: {os.getcwd()}")
     print(f"[DEBUG] Python executable: {sys.executable}")
     
-    # Now try the imports
-    try:
-        from worlds.poe.poeClient import fileHelper
-        print("[DEBUG] fileHelper import: SUCCESS")
-    except ImportError as e:
-        print(f"[ERROR] fileHelper import failed: {e}")
-        sys.exit(1)
+
     
     import pickle
     import logging

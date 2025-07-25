@@ -82,10 +82,13 @@ def call_tts_subprocess(text_files: list[tuple[str, str]], WPM=250, voice_id=Non
     print(f"[DEBUG] Python exe: {python_exe}")
     print(f"[DEBUG] Script path: {tts_script}")
     print(f"[DEBUG] Temp file: {tts_path}")
-    print(f"[DEBUG] Payload: {payload}")
+#    print(f"[DEBUG] Payload: {payload}")
     print(f"[DEBUG] Does tts_subprocess exist? {os.path.exists(fileHelper.tts_subprocess_path)}")
 
-    # Don't wait and check - just start and continue
+    # get current working directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    print(f"[DEBUG] Script directory: {script_dir}")
+    # set the cwd to the directory of the script
     process = subprocess.Popen(
         [python_exe, tts_script, tts_path],
         stdout=subprocess.DEVNULL,
