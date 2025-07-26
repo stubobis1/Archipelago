@@ -51,8 +51,7 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
                 self.item_names = self.mock_item_names()
 
         mctx = mockCtx()
-        tts.generate_tts_tasks_from_missing_locations(mctx)
-        tts.run_tts_tasks()
+        tts.generate_tts_from_missing_locations(mctx)
 
     def _cmd_testing(self) -> bool:
         """A test command to check if the command processor is working."""

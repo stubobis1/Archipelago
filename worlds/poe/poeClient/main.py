@@ -87,12 +87,7 @@ async def async_load(ctx: "PathOfExileContext" = None):
     global context
     ctx = ctx if ctx is not None else context
 
-
-    # Doesn't work rn  ¯\_(ツ)_/¯
-    #thread = threading.Thread(target=tts.generate_tts_from_missing_locations, args=(ctx,)) # comma to make it a tuple
-    #thread.start()
-    tts.generate_tts_tasks_from_missing_locations(ctx)
-    threading.Thread(target=tts.run_tts_tasks, daemon=True).start()  # Run TTS tasks in a separate thread
+    tts.generate_tts_from_missing_locations(ctx)
 
     itemFilter.update_item_filter_from_context(ctx)
 

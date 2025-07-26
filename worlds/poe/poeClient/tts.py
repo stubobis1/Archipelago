@@ -22,146 +22,93 @@ from pathlib import Path
 
 
 _debug = True
-_engine = None  # Global TTS engine instance
+_engine = None
 WPM = 250  # Default words per minute for TTS
-tasks: list[typing.Tuple[str, str, int]] = []  # List to hold async tasks for TTS generation
 
 tts_lock = threading.Lock()  # Lock to ensure thread-safe access to TTS generation
 def get_item_name_tts_text(ctx: "PathOfExileContext", network_item) -> str:
-    return ctx.player_names[network_item.player] + " ... " + ctx.item_names.lookup_in_slot(network_item.item,
-                                                                                               network_item.player)
+    return (ctx.player_names[network_item.player] +
+            " ... " + ctx.item_names.lookup_in_slot(network_item.item, network_item.player))
 
-def safe_tts(text, filename, rate=250, volume=1, voice_id=None, overwrite=False):
+def generate_tts(text, filename, rate=250, volume=1, voice_id=None, overwrite=False, use_daemon=False):
     if not overwrite and Path(filename).exists():
         if _debug:
             print(f"[DEBUG] File already exists: {filename}")
         return
+
     Path(filename).parent.mkdir(parents=True, exist_ok=True)
-    with tts_lock:  # Ensure thread-safe access to TTS generation
-        try:
+    global  _engine, tts_lock
+    if _engine is None:
+        if _debug:
+            print("[DEBUG] Initializing TTS engine.")
+        _engine = pyttsx3.init()
+
+    try:
+        def setup_engine():
             if _debug:
                 print(f"[DEBUG] Initializing TTS engine for text: {text}")
-            engine: Engine = pyttsx3.init()  # No driver specified
             if _debug:
                 print(f"[DEBUG] TTS: text='{text}', filename='{filename}'")
-            engine.setProperty('rate', rate)
-            engine.setProperty('volume', volume)
+            _engine.setProperty('rate', rate)
+            _engine.setProperty('volume', volume)
             if voice_id is not None:
-                engine.setProperty('voice', voice_id)
-            engine.save_to_file(text, str(filename))
-            engine.runAndWait()
-            engine.stop()
-            del engine
-            if Path(filename).exists():
-                print(f"[DEBUG] File created: {filename}")
-            else:
-                print(f"[ERROR] File NOT created: {filename}")
-        except Exception as e:
-            print(f"[ERROR] Exception during TTS: {e}")
+                _engine.setProperty('voice', voice_id)
+            _engine.save_to_file(text, str(filename))
+        if use_daemon:
+            def run_with_lock():
+                with tts_lock:
+                    setup_engine()
+                    _engine.runAndWait()
+            threading.Thread(target=run_with_lock, daemon=True).start()
+        else:
+            with tts_lock:
+                setup_engine()
+                _engine.runAndWait()
 
-async def safe_tts_async(text, filename, rate=250, volume=1, voice_id=None):
-    if _debug:
-        print(f"[DEBUG] Async TTS: text='{text}', filename='{filename}'")
+    except Exception as e:
+        if _debug:
+            print(f"[DEBUG] Error generating TTS: {e}")
+        raise e
 
-    safe_tts(text, filename, rate, volume, voice_id)
-
-def generate_tts_from_missing_locations(ctx: "PathOfExileContext", WPM: int = WPM) -> None:
+def generate_tts_from_missing_locations(ctx: "PathOfExileContext", WPM: int = WPM, use_daemon=False) -> None:
     """Generate TTS files for missing locations."""
     if not ctx or not ctx.missing_locations:
         print("[DEBUG] No missing locations to generate TTS for.")
         return
-    
+    global tts_lock
     missing_location_ids = ctx.missing_locations
-    for base_item_location_id in missing_location_ids:
-        network_item = ctx.locations_info[base_item_location_id]
-        item_text = get_item_name_tts_text(ctx, network_item)
-        filename = fileHelper.safe_filename(f"{item_text.lower()}_{WPM}.wav")
+    def engine_generate():
+        for base_item_location_id in missing_location_ids:
+            network_item = ctx.locations_info[base_item_location_id]
+            item_text = get_item_name_tts_text(ctx, network_item)
+            filename = fileHelper.safe_filename(f"{item_text.lower()}_{WPM}.wav")
 
-        relative_path = f"{itemFilter.filter_sounds_dir_name}/{filename.lower()}"
-        full_path = itemFilter.filter_sounds_path / f"{filename}"
+            relative_path = f"{itemFilter.filter_sounds_dir_name}/{filename.lower()}"
+            full_path = itemFilter.filter_sounds_path / f"{filename}"
 
-        if not os.path.exists(full_path):
-            if _debug:
-                print(f"[DEBUG] Generating TTS for item: {item_text} at {full_path}")
-                safe_tts(
+            if not os.path.exists(full_path):
+                if _debug:
+                    print(f"[DEBUG] Generating TTS for item: {item_text} at {full_path}")
+
+                engine = pyttsx3.init()
+                engine.save_to_file(
                     text=item_text,
                     filename=full_path
                 )
-        itemFilter.base_item_id_to_relative_wav_path[base_item_location_id] = relative_path
+                engine.runAndWait()
+                engine.stop()
+                del engine
+            itemFilter.base_item_id_to_relative_wav_path[base_item_location_id] = relative_path
 
 
-def generate_tts_tasks_from_missing_locations(ctx: "PathOfExileContext", WPM: int = WPM) -> None:
-    """Generate TTS files for missing locations."""
-    if not ctx or not ctx.missing_locations:
-        print("[DEBUG] No missing locations to generate TTS for.")
-        return
-
-    missing_location_ids = ctx.missing_locations
-    for base_item_location_id in missing_location_ids:
-        network_item = ctx.locations_info[base_item_location_id]
-        item_text = get_item_name_tts_text(ctx, network_item)
-        filename = fileHelper.safe_filename(f"{item_text.lower()}_{WPM}.wav")
-
-        relative_path = f"{itemFilter.filter_sounds_dir_name}/{filename.lower()}"
-        full_path = itemFilter.filter_sounds_path / f"{filename}"
-
-        if not os.path.exists(full_path):
-            if _debug:
-                print(f"[DEBUG] Generating TTS for item: {item_text} at {full_path}")
-                tasks.append((
-                    item_text,
-                    full_path,
-                    WPM
-                ))
-        itemFilter.base_item_id_to_relative_wav_path[base_item_location_id] = relative_path
-
-
-running_tasks = False  # Flag to indicate if TTS tasks are running
-def run_tts_tasks():
-    """Run all TTS tasks"""
-    try:
-        # Disable specific loggers to avoid crashes. Something about these logs causes crashes in pyttsx3
-        for logger_name in ['pyttsx3', 'comtypes', 'win32com']:
-            logging.getLogger(logger_name).disabled = True
-            logging.getLogger(logger_name).setLevel(logging.CRITICAL + 1)
-
-        global tasks, running_tasks, _engine
-        if not tasks or len(tasks) == 0:
-            print("[DEBUG] No TTS tasks to run.")
-            return
-
-        if _engine is None:
-            _engine = pyttsx3.init()
-
-        if len(tasks) > 0:
-            for text, filename, rate in tasks:
-                if not os.path.exists(filename):
-                    if _debug:
-                        print(f"[DEBUG] Generating TTS for text: {text} at {filename}")
-                    _engine.setProperty('rate', rate)
-                    _engine.save_to_file(text, str(filename))
-            tasks.clear()
-        thread = threading.Thread(target=_engine.runAndWait, daemon=True)
-        thread.start()
-    except Exception as e:
-        print(f"[ERROR] Exception during TTS tasks: {e}")
-
-
-def itterate_tts_tasks():
-    """Iterate through TTS tasks and run them one by one."""
-    global _engine
-    if _engine:
-        _engine.runAndWait()  # Process the TTS queue
+    if use_daemon:
+        def run_with_lock():
+            with tts_lock:  # Lock inside the thread
+                engine_generate()
+        threading.Thread(target=run_with_lock, daemon=True).start()
     else:
-        if _debug:
-            print("[DEBUG] TTS engine not initialized, cannot iterate tasks.")
-
-
-async def async_test():
-    tasks = []
-    for i in range(100):
-        tasks.append(safe_tts_async(f"Hello {i}", f"test{i}.wav"))
-    await asyncio.gather(*tasks)
+        with tts_lock:
+            engine_generate()
 
 if __name__ == "__main__":
     
@@ -184,13 +131,9 @@ if __name__ == "__main__":
             }
             self.player_names = {player_id: f"Player{player_id}" for player_id in range(1, len(Items.item_table) + 1)}
             self.item_names = self.mock_item_names()
-
-
-
     ctx = mockCtx()
 
-    generate_tts_tasks_from_missing_locations(ctx, WPM)
-    run_tts_tasks()
+    generate_tts_from_missing_locations(ctx, use_daemon=False)
 
     #thread = threading.Thread(target=generate_tts_from_missing_locations, args=(ctx,))  # comma to make it a tuple
     #thread.start()
