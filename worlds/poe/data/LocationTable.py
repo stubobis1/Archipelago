@@ -7,6 +7,19 @@ from BaseClasses import ItemClassification
 
 
 location_array = [
+{"dropLevel": 1, "act": 1, "baseItem": "Scroll of Wisdom", "name": "Scroll of Wisdom"},
+{"dropLevel": 1, "act": 1, "baseItem": "Blacksmith's Whetstone", "name": "Blacksmith's Whetstone"},
+{"dropLevel": 1, "act": 1, "baseItem": "Orb of Transmutation", "name": "Orb of Transmutation"},
+{"dropLevel": 1, "act": 1, "baseItem": "Orb of Augmentation", "name": "Orb of Augmentation"},
+
+{"dropLevel": 8, "act": 1, "baseItem": "Portal Scroll", "name": "Portal Scroll"},
+{"dropLevel": 8, "act": 1, "baseItem": "Orb of Chance", "name": "Orb of Chance"},
+{"dropLevel": 8, "act": 1, "baseItem": "Orb of Alteration", "name": "Orb of Alteration"},
+{"dropLevel": 8, "act": 1, "baseItem": "Chromatic Orb", "name": "Chromatic Orb"},
+
+{"dropLevel": 1, "act": 1, "baseItem": "Orb of Fusing", "name": "Orb of Fusing"},
+# https://www.poewiki.net/wiki/Currency
+
 {"dropLevel": 1, "act": 1, "baseItem": "Plate Vest", "name": "Plate Vest"},
 {"dropLevel": 1, "act": 1, "baseItem": "Iron Greaves", "name": "Iron Greaves"},
 {"dropLevel": 1, "act": 1, "baseItem": "Crude Bow", "name": "Crude Bow"},

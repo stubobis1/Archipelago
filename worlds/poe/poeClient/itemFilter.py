@@ -161,12 +161,12 @@ def write_item_filter(item_filter:str, item_filter_import:str|None=None, file_pa
         _valid_base_item_filter_paths.add(item_filter_import)
         write_filter = True
 
-    if _debug and not write_filter:
-            print(f"[DEBUG] Not writing base item filter because import path '{item_filter_import}' is not valid or does not exist (this is fine, there just isn't a backup item filter).")
+    if not write_filter:
+            logger.debug(f"[DEBUG] Not writing imported portion of base item filter because import path '{item_filter_import}' is not valid or does not exist (this is fine, there just isn't a backup item filter).")
 
     if write_filter:
         item_filter = f"""{item_filter}
-    Import "{item_filter_import}"
+    Import "{item_filter_import}" Optional
     """
 
     with open(str(file_path), "w", encoding="utf-8") as f:
