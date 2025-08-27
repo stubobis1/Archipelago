@@ -136,6 +136,10 @@ class PathOfExileWorld(World):
         self.multiworld.push_precollected(item_obj)
     
     def generate_early(self):
+        # Clear performance cache for fresh generation
+        from . import Rules as poeRules
+        poeRules.clear_item_cache()
+        
         opt: PathOfExileOptions = self.options
         self.goal_act = get_goal_act(self, opt)
 

@@ -76,111 +76,134 @@ def completion_condition(world: "PathOfExileWorld",  state: CollectionState) -> 
     else: # reach act for goal
         return can_reach(world.goal_act, world, state)
 
-def can_reach(act: int, world , state: CollectionState) -> bool:
-    opt : PathOfExileOptions = world.options
+# Cache for expensive item lookups to avoid repeated computation
+_item_cache = {}
+
+def _get_cached_items(cache_key, item_func, *args):
+    """Cache expensive item list generation."""
+    if cache_key not in _item_cache:
+        _item_cache[cache_key] = item_func(*args)
+    return _item_cache[cache_key]
+
+def can_reach(act: int, world, state: CollectionState) -> bool:
+    opt: PathOfExileOptions = world.options
 
     if opt.disable_generation_logic.value:
         return True
 
-    reachable = True
     if act < 1:
         return True
 
+    # Early exit optimization - calculate required amounts first
     ascedancy_amount = get_ascendancy_amount_for_act(act, opt)
     gear_amount = get_gear_amount_for_act(act, opt)
     flask_amount = get_flask_amount_for_act(act, opt)
     gem_slot_amount = get_gem_amount_for_act(act, opt)
     skill_gem_amount = get_skill_gem_amount_for_act(act, opt)
     support_gem_amount = get_support_gem_amount_for_act(act, opt)
-    passive_amount = get_passives_amount_for_act(act,opt)
+    passive_amount = get_passives_amount_for_act(act, opt)
 
-    # make a list of valid weapon types, based on the state
-
-    valid_weapon_types = {
-        item for item in weapon_categories
-        if state.has_from_list([i["name"] for i in Items.get_by_category(item)], world.player, 1)
-    }
-    valid_weapon_types.add("Unarmed")  # every character can use unarmed, so we add it as a valid type, for gems
-    
-    ascedancy_count = state.count_from_list([item['name'] for item in Items.get_ascendancy_class_items(opt.starting_character.current_option_name)], world.player)
-    gear_count = state.count_from_list([item['name'] for item in Items.get_gear_items()], world.player)
-    flask_count = state.count_from_list([item['name'] for item in Items.get_flask_items() if 'Unique' not in item['category']], world.player) # unique flasks are not logically required
-    support_gem_count = state.count_from_list([item['name'] for item in Items.get_support_gem_items()], world.player)
-    gem_slot_count = state.count_from_list([item['name'] for item in Items.get_max_links_items()], world.player)
+    # Quick passive check first (cheapest operation)
     passive_count = state.count("Progressive passive point", world.player)
+    if passive_count < passive_amount:
+        return False
 
-    gems_for_our_weapons = [item['name'] for item in Items.get_main_skill_gems_by_required_level_and_useable_weapon(
-            available_weapons= valid_weapon_types, level_minimum=1, level_maximum=acts[act].get("maxMonsterLevel", 0) )]
-    usable_skill_gem_count = (state.count_from_list(gems_for_our_weapons, world.player))
+    # Cache item lists by character class to avoid repeated lookups
+    char_class = opt.starting_character.current_option_name
+    ascendancy_items = _get_cached_items(f"ascendancy_{char_class}", Items.get_ascendancy_class_items, char_class)
+    gear_items = _get_cached_items("gear_items", Items.get_gear_items)
+    flask_items = _get_cached_items("flask_items", Items.get_flask_items)
+    support_gem_items = _get_cached_items("support_gem_items", Items.get_support_gem_items)
+    max_links_items = _get_cached_items("max_links_items", Items.get_max_links_items)
 
+    # Pre-filter flask items to exclude unique ones (done once and cached)
+    non_unique_flask_key = "non_unique_flasks"
+    if non_unique_flask_key not in _item_cache:
+        _item_cache[non_unique_flask_key] = [item for item in flask_items if 'Unique' not in item['category']]
+    non_unique_flask_items = _item_cache[non_unique_flask_key]
 
-    valid_weapon_types.remove("Unarmed") # we don't care about this for the rest of the logic
+    # Extract names once and reuse
+    ascendancy_names = [item['name'] for item in ascendancy_items]
+    gear_names = [item['name'] for item in gear_items]
+    non_unique_flask_names = [item['name'] for item in non_unique_flask_items]
+    support_gem_names = [item['name'] for item in support_gem_items]
+    max_links_names = [item['name'] for item in max_links_items]
+
+    # Batch count operations to reduce state traversals
+    ascendancy_count = state.count_from_list(ascendancy_names, world.player)
+    gear_count = state.count_from_list(gear_names, world.player)
+    flask_count = state.count_from_list(non_unique_flask_names, world.player)
+    support_gem_count = state.count_from_list(support_gem_names, world.player)
+    gem_slot_count = state.count_from_list(max_links_names, world.player)
+
+    # Early exit checks for most expensive requirements
+    if (ascendancy_count < ascedancy_amount or 
+        gear_count < gear_amount or 
+        flask_count < flask_amount or
+        gem_slot_count < gem_slot_amount or
+        support_gem_count < support_gem_amount):
+        return False
+
+    # Cache weapon category items
+    weapon_category_items = {}
+    for weapon_type in weapon_categories:
+        cache_key = f"weapon_category_{weapon_type}"
+        if cache_key not in _item_cache:
+            _item_cache[cache_key] = [i["name"] for i in Items.get_by_category(weapon_type)]
+        weapon_category_items[weapon_type] = _item_cache[cache_key]
+
+    # Efficiently determine valid weapon types
+    valid_weapon_types = {
+        weapon_type for weapon_type in weapon_categories
+        if weapon_category_items[weapon_type] and state.has_from_list(weapon_category_items[weapon_type], world.player, 1)
+    }
+    valid_weapon_types.add("Unarmed")  # every character can use unarmed
+
+    # Cache gems for weapons to avoid repeated computation
+    max_level = acts[act].get("maxMonsterLevel", 0)
+    gems_cache_key = f"gems_{frozenset(valid_weapon_types)}_{max_level}"
+    if gems_cache_key not in _item_cache:
+        gems_for_weapons = Items.get_main_skill_gems_by_required_level_and_useable_weapon(
+            available_weapons=valid_weapon_types, level_minimum=1, level_maximum=max_level
+        )
+        _item_cache[gems_cache_key] = [item['name'] for item in gems_for_weapons]
+    
+    gems_for_our_weapons = _item_cache[gems_cache_key]
+    usable_skill_gem_count = state.count_from_list(gems_for_our_weapons, world.player)
+
+    # Check skill gem requirement
+    if usable_skill_gem_count < skill_gem_amount:
+        return False
+
+    valid_weapon_types.discard("Unarmed")  # remove for weapon type count
+
+    # Act 1 specific checks
     if act == 1:
-            # Check distinct armor categories
-
+        # Cache armor category items
         distinct_armor_count = 0
-
         for category in armor_categories:
-            category_items = [item['name'] for item in Items.get_by_category(category)]
+            cache_key = f"armor_category_{category}"
+            if cache_key not in _item_cache:
+                _item_cache[cache_key] = [item['name'] for item in Items.get_by_category(category)]
+            category_items = _item_cache[cache_key]
+            
             if category_items and state.has_from_list(category_items, world.player, 1):
                 distinct_armor_count += 1
 
-        reachable &= usable_skill_gem_count >= ACT_0_USABLE_GEMS
-        reachable &= len(valid_weapon_types) >= ACT_0_WEAPON_TYPES
-        reachable &= distinct_armor_count >= ACT_0_ARMOUR_TYPES
-        reachable &= flask_count >= ACT_0_FLASK_SLOTS
+        # Final Act 1 checks
+        if (usable_skill_gem_count < ACT_0_USABLE_GEMS or
+            len(valid_weapon_types) < ACT_0_WEAPON_TYPES or
+            distinct_armor_count < ACT_0_ARMOUR_TYPES or
+            flask_count < ACT_0_FLASK_SLOTS):
+            return False
+
+    return True
 
 
-    reachable &= ascedancy_count >= ascedancy_amount and \
-            gear_count >= gear_amount and \
-            flask_count >= flask_amount and \
-            gem_slot_count >= gem_slot_amount and \
-            support_gem_count >= support_gem_amount and \
-            usable_skill_gem_count >= skill_gem_amount and \
-            passive_count >= passive_amount
-
-    if not reachable:
-        if _debug:
-            log = f"Act {act} not reachable with gear:"
-            if gear_count < gear_amount:
-                log += f"gear: {gear_count}/{gear_amount},"
-            if flask_count < flask_amount:
-                log += f" flask: {flask_count}/{flask_amount},"
-            if gem_slot_count < gem_slot_amount:
-                log += f" gem slots: {gem_slot_count}/{gem_slot_amount},"
-            if support_gem_count < support_gem_amount:
-                log += f" support gems: {support_gem_count}/{support_gem_amount},"
-            if usable_skill_gem_count < skill_gem_amount:
-                log += f" skill gems: {usable_skill_gem_count}/{skill_gem_amount},"
-            if ascedancy_count < ascedancy_amount:
-                log += f" ascendancies: {ascedancy_count}/{ascedancy_amount},"
-            if passive_count < passive_amount:
-                log += f" levels:{passive_count}/{passive_amount}"
-            log += f" for {opt.starting_character.current_option_name}"
-
-            #print (log)
-
-            logger.debug(log)
-        if _very_debug:
-            logger.debug(f"[DEBUG] expecting Act {act} - Gear: {gear_amount}, Flask: {flask_amount}, Gem Slots: {gem_slot_amount}, Skill Gems: {skill_gem_amount}, Ascendancies: {ascedancy_amount}")
-            logger.debug(f"[DEBUG] we have   Act {act} - Gear: {gear_count}, Flask: {flask_count}, Gem Slots: {gem_slot_count}, Skill Gems: {usable_skill_gem_count}, Ascendancies: {ascedancy_count}")
-            #add up all the prog items
-
-
-            total_items = state.count_from_list([item["name"] for item in Items.get_gear_items()], world.player) + \
-                          state.count_from_list([item["name"] for item in Items.get_flask_items()], world.player) + \
-                          state.count_from_list([item["name"] for item in Items.get_max_links_items()], world.player) + \
-                          state.count_from_list([item["name"] for item in Items.get_main_skill_gem_items()], world.player) + \
-                          state.count_from_list([item["name"] for item in Items.get_ascendancy_class_items(opt.starting_character.current_option_name)], world.player)
-            logger.debug(f"[DEBUG] total items {total_items}, ")
-            logger.debug(f"[DEBUG] expecting   {gear_amount + flask_amount + gem_slot_amount + skill_gem_amount} items")
-            logger.debug(f"\n\n")
-    
-    
-    return reachable
-
-
-
+def clear_item_cache():
+    """Clear the item cache. Should be called when starting a new generation."""
+    global _item_cache
+    _item_cache.clear()
 
 
 def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount):
