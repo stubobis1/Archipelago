@@ -325,6 +325,19 @@ class PathOfExileContext(CommonContext):
             self.client_options = self.slot_data.get('client_options', {})
             self.generated_version = self.slot_data.get('generated_version', 'unknown')
 
+            self.command_processor.output(self=self.command_processor,
+                                          text=f"This product isn’t affiliated with or endorsed by Grinding Gear Games in any way.")
+            if self.generated_version != POE_VERSION:
+                if self.generated_version in BACKWARDS_COMPATIBLE_VERSIONS:
+                    log = f"Connected to server with different version: {self.generated_version}, but it is marked as backwards compatible."
+                    self.logger.info(log)
+                    self.command_processor.output(self=self.command_processor, text=log)
+                else:
+                    log = f"--------------------------------------------------------------------------------------------\nServer generated with unsupported version!\nServer:{self.generated_version}\nClient:{POE_VERSION}\nThis may cause issues!!!\n--------------------------------------------------------------------------------------------"
+                    self.logger.warning(log)
+                    self.command_processor.output(self=self.command_processor, text=log)
+            self.generated_version = self.slot_data.get('generated_version', 'unknown')
+
             if self.generated_version != POE_VERSION:
                 if self.generated_version in BACKWARDS_COMPATIBLE_VERSIONS:
                     log = f"Connected to server with different version: {self.generated_version}, but it is marked as backwards compatible."
