@@ -48,6 +48,12 @@ def load_vendor_modules():
     import atexit
     import shutil
     import pkgutil
+    
+    # Import version after other imports to avoid circular imports
+    try:
+        from ..Version import POE_VERSION
+    except ImportError:
+        POE_VERSION = "unknown"
 
     # Prevent double-load
     if getattr(sys, "_vendor_modules_loaded", False):
@@ -58,62 +64,94 @@ def load_vendor_modules():
         return
     
     _ensure_stdlib_shims()
+    
+    # Check if vendor directory exists and has matching version
+    version_file = vendor_dir / "poe_version.txt"
+    should_recreate = True
     zip_dest = os.path.join(vendor_dir, "vendor_modules.zip")
     if vendor_dir.exists():
         try:
-            shutil.rmtree(vendor_dir)
-        except PermissionError:
-            # Directory is in use (likely during tests), just skip recreation
-            logger.debug("[vendor] Vendor directory in use, skipping recreation")
-            if str(vendor_dir) not in sys.path:
-                sys.path.insert(0, str(vendor_dir))
-                # Add subdirectories as well
-                for subdir in vendor_dir.iterdir():
-                    if subdir.is_dir():
-                        sys.path.insert(0, str(subdir))
-            return
-
-    # Ensure vendor directory exists
-    os.makedirs(vendor_dir, exist_ok=True)
-    try:
-        vendor_zip_data = pkgutil.get_data("worlds.poe.poeClient", "vendor/vendor_modules.zip")
-
-        if vendor_zip_data is None:
-            base_dir = os.path.dirname(__file__)
-            vendor_zip_path = os.path.join(base_dir, "vendor_modules.zip")
-
-            if not os.path.isfile(vendor_zip_path):
-                logger.warning("[vendor] vendor_modules.zip not found in package or current directory")
-                return
-            shutil.copy2(vendor_zip_path, zip_dest)
-        else:
-            with open(zip_dest, "wb") as f:
-                f.write(vendor_zip_data)
-
-        with zipfile.ZipFile(zip_dest, 'r') as vendor_zip:
-            vendor_zip.extractall(vendor_dir)
-
-        # Clean up the copied zip file after extraction
-        os.remove(zip_dest)
-
-        sys.path.insert(0, str(vendor_dir))
-        last_vendor_modules = ['httpcore']
-        
-        for subdir in vendor_dir.iterdir():
-            if subdir.is_dir() 
-                if subdir.name in last_vendor_modules:
-                    sys.path.append(str(subdir))
+            if version_file.exists():
+                with open(version_file, 'r') as f:
+                    stored_version = f.read().strip()
+                if stored_version == POE_VERSION:
+                    should_recreate = False
+                    logger.debug(f"[vendor] Version {POE_VERSION} matches, using existing vendor directory")
                 else:
-                    sys.path.insert(0, str(subdir))
+                    logger.info(f"[vendor] Version mismatch: stored={stored_version}, current={POE_VERSION}, recreating vendor directory")
+            else:
+                logger.info("[vendor] No version file found, recreating vendor directory")
+        except Exception as e:
+            logger.warning(f"[vendor] Error checking version: {e}, recreating vendor directory")
+    
+    if should_recreate:
+        # Remove existing directory if it exists
+        if vendor_dir.exists():
+            try:
+                shutil.rmtree(vendor_dir)
+            except PermissionError:
+                # Directory is in use (likely during tests), just skip recreation
+                logger.debug("[vendor] Vendor directory in use, skipping recreation")
+                if str(vendor_dir) not in sys.path:
+                    sys.path.append(str(vendor_dir))
+                    # Add subdirectories as well
+                    for subdir in vendor_dir.iterdir():
+                        if subdir.is_dir():
+                            sys.path.append(str(subdir))
+                return
 
-        # Add each subdirectory to the path as well
-        for subdir in vendor_dir.iterdir():
-            if subdir.is_dir():
+        # Ensure vendor directory exists
+        os.makedirs(vendor_dir, exist_ok=True)
+        
+        try:
+            vendor_zip_data = pkgutil.get_data("worlds.poe.poeClient", "vendor/vendor_modules.zip")
+
+            if vendor_zip_data is None:
+                base_dir = os.path.dirname(__file__)
+                vendor_zip_path = os.path.join(base_dir, "vendor_modules.zip")
+
+                if not os.path.isfile(vendor_zip_path):
+                    logger.warning("[vendor] vendor_modules.zip not found in package or current directory")
+                    return
+                shutil.copy2(vendor_zip_path, zip_dest)
+            else:
+                with open(zip_dest, "wb") as f:
+                    f.write(vendor_zip_data)
+
+            with zipfile.ZipFile(zip_dest, 'r') as vendor_zip:
+                vendor_zip.extractall(vendor_dir)
+
+            # Clean up the copied zip file after extraction
+            os.remove(zip_dest)
+            
+            # Write version file
+            with open(version_file, 'w') as f:
+                f.write(POE_VERSION)
+            logger.info(f"[vendor] Created vendor directory for version {POE_VERSION}")
+
+        except Exception as e:
+            logger.error(f"[vendor] Failed to extract vendor modules: {e}")
+            raise
+
+    # Add vendor modules to sys.path
+    sys.path.append(str(vendor_dir))
+    
+    # Add subdirectories, with httpx and httpcore at the end to avoid stdlib conflicts
+    last_vendor_modules = ['httpx', 'httpcore']
+
+    for subdir in vendor_dir.iterdir():
+        if subdir.is_dir():
+            if subdir.name in last_vendor_modules:
+                sys.path.append(str(subdir))
+            else:
                 sys.path.insert(0, str(subdir))
-
-    except Exception as e:
-        logger.error(f"[vendor] Failed to load vendor modules: {e}")
-        raise
+            # Add each subdirectory to the path as well
+            for subdir in vendor_dir.iterdir():
+                if subdir.is_dir():
+                    if subdir.name in last_vendor_modules:
+                        sys.path.append(str(subdir))
+                    else:
+                        sys.path.insert(0, str(subdir))
 
 
 def safe_filename(filename: str) -> str:
