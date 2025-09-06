@@ -97,7 +97,15 @@ def load_vendor_modules():
         os.remove(zip_dest)
 
         sys.path.insert(0, str(vendor_dir))
+        last_vendor_modules = ['httpcore']
         
+        for subdir in vendor_dir.iterdir():
+            if subdir.is_dir() 
+                if subdir.name in last_vendor_modules:
+                    sys.path.append(str(subdir))
+                else:
+                    sys.path.insert(0, str(subdir))
+
         # Add each subdirectory to the path as well
         for subdir in vendor_dir.iterdir():
             if subdir.is_dir():

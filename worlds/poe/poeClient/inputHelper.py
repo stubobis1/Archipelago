@@ -4,7 +4,10 @@ import sys
 
 
 import asyncio
-import pywinctl as gw
+try:
+    import pywinctl as gw
+except:
+    import pygetwindow as gw  # type: ignore
 import time
 from pynput.keyboard import Controller, Key
 
