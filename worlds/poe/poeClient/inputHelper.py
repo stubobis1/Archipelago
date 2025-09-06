@@ -2,6 +2,14 @@ import logging
 import os
 import sys
 
+# Load vendor modules before any other imports that depend on them
+try:
+    from . import fileHelper
+    fileHelper.load_vendor_modules()
+except ImportError:
+    # Fallback for when running as a script
+    import fileHelper
+    fileHelper.load_vendor_modules()
 
 import asyncio
 try:
