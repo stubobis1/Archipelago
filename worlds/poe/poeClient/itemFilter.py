@@ -150,6 +150,7 @@ def update_item_filter_from_context(ctx : "PathOfExileContext", exclude_location
             style_string = get_random_style_string()
 
         relative_wav_path = None
+        write_wav = False  # Initialize to default value
         if ctx.filter_options.tts_enabled or ctx.filter_options.loot_filter_sounds != LootFilterSounds.option_no_sound:
             write_wav = True
 
