@@ -378,7 +378,7 @@ def setup_character_items(world, options):
                 (options.usable_starting_gear.option_starting_weapon_flask_and_gems,
                  options.usable_starting_gear.option_starting_weapon_and_gems,
                  options.usable_starting_gear.option_starting_weapon):
-            weapon_name = ItemTable.starting_items_table[char]["weapon"]
+            weapon_name = ItemTable.starting_items_table[char]["weapon"] if options.progressive_gear.value == options.progressive_gear.option_disabled else ItemTable.starting_items_table[char]["progressive weapon"]
             if weapon_name in [item["name"] for item in world.items_to_place.values()]:
                 world.precollect(world.remove_and_create_item_by_name(weapon_name))
 
