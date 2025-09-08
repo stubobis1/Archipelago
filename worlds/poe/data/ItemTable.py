@@ -126,44 +126,37 @@ shield_base_type_array = [
 
 starting_items_table = {
     "Scion": {
-        "progressive weapon": "Progressive Sword",
-		"weapon": "Normal Sword",
+		"weapon": "Sword",
         "gem": "Spectral Throw",
         "support": "Prismatic Burst Support"
     },
     "Marauder": {
-        "progressive weapon": "Progressive Mace",
-		"weapon": "Normal Mace",
+		"weapon": "Mace",
         "gem": "Heavy Strike",
         "support": "Ruthless Support"
     },
     "Duelist": {
-        "progressive weapon": "Progressive Sword",
-		"weapon": "Normal Sword",
+		"weapon": "Sword",
         "gem": "Double Strike",
         "support": "Chance to Bleed Support"
     },
     "Ranger": {
-        "progressive weapon": "Progressive Bow",
-		"weapon": "Normal Bow",
+		"weapon": "Bow",
         "gem": "Burning Arrow",
         "support": "Momentum Support"
     },
     "Shadow": {
-        "progressive weapon": "Progressive Dagger",
-		"weapon": "Normal Dagger",
+		"weapon": "Dagger",
         "gem": "Viper Strike",
         "support": "Chance to Poison Support"
     },
     "Witch": {
-        "progressive weapon": "Progressive Wand",
-		"weapon": "Normal Wand",
+		"weapon": "Wand",
         "gem": "Fireball",
         "support": "Arcane Surge Support"
     },
     "Templar": {
-        "progressive weapon": "Progressive Sceptre",
-		"weapon": "Normal Sceptre",
+		"weapon": "Sceptre",
         "gem": "Glacial Hammer",
         "support": "Elemental Proliferation Support"
     },
