@@ -256,8 +256,7 @@ def build_world_key(ctx: "PathOfExileContext") -> str:
     This key is used to store and retrieve settings for the specific world.
     """
     world_prefix = ctx.slot_data.get('poe-uuid', '')
-    return f"world {str((ctx.seed_name if ctx.seed_name is not None else '') + world_prefix + ctx.username)}"
-
+    return f"world {str((ctx.seed_name if ctx.seed_name is not None else '') + world_prefix + (ctx.username if ctx.username is not None else ''))}"
 
 async def save_settings(ctx: "PathOfExileContext", path: Path = settings_file_path):
     # Read existing settings first

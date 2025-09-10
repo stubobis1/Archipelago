@@ -24,6 +24,7 @@ JINGLE_FILTER_SOUNDS_DIR_NAME = "_ap_jingle"
 start_item_filter_block = "# <Base Item Hunt item>"
 end_item_filter_block = "# </Base Item Hunt item>"
 
+DEFAULT_POE_DOC_PATH = Path.home() / "Documents" / "My Games" / "Path of Exile"
 poe_doc_path = Path.home() / "Documents" / "My Games" / "Path of Exile"
 
 def set_poe_doc_path(new_path: Path | str) -> None:

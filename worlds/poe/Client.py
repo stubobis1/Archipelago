@@ -92,15 +92,24 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
         self.ctx.update_settings()
         self.output(f"TTS speed set to {speed} words per minute.")
         return True
-    
-    def _cmd_poe_documents_directory(self, path:str) -> bool:
-        r"""Change the default directory for poe item filters -- by default it's at C:\Users\<USER>\Documents\My Games\Path of Exile.
-        this may be needed if running on linux. (or maybe onedrive?)"""
-        global logger
+
+    reset_poe_doc_path = False
+    def _cmd_poe_documents_directory(self, path:str|None = None) -> bool:
+        r"""Change the default directory for poe item filters, this may be needed if running on linux.
+        Path of exile only looks for item filters at C:\Users\<USER>\Documents\My Games\Path of Exile."""
+        filter_path = None
+
         if not path:
-            self.output("The current directory for poe item filters is:")
-            self.output(f"  {itemFilter.get_poe_doc_path()}")
+            if self.reset_poe_doc_path:
+                filter_path = itemFilter.DEFAULT_POE_DOC_PATH
+                self.output(f"Setting to default path: {str(filter_path)}")
+            else:
+                self.output("The current directory for poe item filters is:")
+                self.output(f"  {itemFilter.poe_doc_path}")
+                self.output("Run this command again to set it to the default directory.")
+                self.reset_poe_doc_path = True
             return False
+        self.reset_poe_doc_path = False
         filter_path = Path(path)
         if not filter_path.exists():
             self.output(f"ERROR: The provided path does not exist: {path}")
@@ -111,7 +120,7 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
         itemFilter.set_poe_doc_path(filter_path)
         self.ctx.poe_doc_path = str(filter_path)
         self.ctx.update_settings()
-        logger.debug(f"[DEBUG] Set poe documents directory to: {filter_path}")
+        self.logger.debug(f"[DEBUG] Set poe documents directory to: {filter_path}")
         return True
 
     def _cmd_generate_tts(self) -> bool:
