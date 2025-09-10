@@ -50,7 +50,7 @@
 {"category":["Gear","Progressive Gear","Progressive","Armour","Ring (right)"],"count":4,"classification":1,"name":"Progressive Ring (right)","id":48},
 {"category":["Gear","Progressive Gear","Progressive","Armour","Quiver"],"count":4,"classification":1,"name":"Progressive Quiver","id":49},
 {"category":["Gear","Progressive Gear","Progressive","Armour","Shield"],"count":4,"classification":1,"name":"Progressive Shield","id":50},
-{"category":["Gear","Progressive Gear","Normal","Fishing Rod"],"classification":0,"count":4,"name":"Progressive Fishing Rod","id":51},
+{"category":["Gear","Progressive Gear","Progressive","Weapon","Fishing Rod"],"classification":0,"count":4,"name":"Progressive Fishing Rod","id":51},
 
 {"category":["Gear","Random Gear","Normal","Weapon","Axe"],"classification":1,"name":"Normal Axe","id":52},
 {"category":["Gear","Random Gear","Normal","Weapon","Bow"],"classification":1,"name":"Normal Bow","id":53},

@@ -404,33 +404,36 @@ def setup_character_items(world, options):
         if options.usable_starting_gear.value in \
                 (options.usable_starting_gear.option_starting_weapon_flask_and_gems,
                  options.usable_starting_gear.option_starting_weapon_and_flask_slots):
+            if options.progressive_gear.value == options.progressive_gear.option_disabled:
+                # Get all normal flask items from the main table, this will probably just be 1, with a count
+                normal_flasks = Items.get_by_has_every_category({"Flask", "Normal"})
+                normal_flask_ids = {flask["id"] for flask in normal_flasks}
+                total_normal_flask_count = sum(
+                    item.get("count", 1) for item in world.items_to_place.values() if item["id"] in normal_flask_ids)
+                # Count how many normal flasks are already collected
+                collected_normal_flask_count = sum(
+                    1 for item_obj in world.items_procollected.values() if item_obj.code in normal_flask_ids)
 
-            # Get all normal flask items from the main table, this will probably just be 1, with a count
-            normal_flasks = Items.get_by_has_every_category({"Flask", "Normal"})
-            normal_flask_ids = {flask["id"] for flask in normal_flasks}
-            total_normal_flask_count = sum(
-                item.get("count", 1) for item in world.items_to_place.values() if item["id"] in normal_flask_ids)
-            # Count how many normal flasks are already collected
-            collected_normal_flask_count = sum(
-                1 for item_obj in world.items_procollected.values() if item_obj.code in normal_flask_ids)
+                # add flasks
+                flasks_needed = STARTING_FLASK_SLOTS - collected_normal_flask_count
+                if flasks_needed > 0:
+                    normal_progressive_flask = Items.get_by_has_every_category({"Flask", "Normal"},
+                                                                               table=world.items_to_place)  # should only be 1 item
+                    total_normal_flask_count = normal_progressive_flask[0].get("count", 1)
+                    for i in range(min(flasks_needed, total_normal_flask_count)):
+                        item_obj = Items.PathOfExileItem(
+                            name=normal_progressive_flask[0]["name"],
+                            classification=ItemClassification.progression,
+                            code=normal_progressive_flask[0]["id"],
+                            player=world.player)
+                        world.precollect(item_obj)
 
-            # add flasks
-            flasks_needed = STARTING_FLASK_SLOTS - collected_normal_flask_count
-            if flasks_needed > 0:
-                normal_progressive_flask = Items.get_by_has_every_category({"Flask", "Normal"},
-                                                                           table=world.items_to_place)  # should only be 1 item
-                total_normal_flask_count = normal_progressive_flask[0].get("count", 1)
-                for i in range(min(flasks_needed, total_normal_flask_count)):
-                    item_obj = Items.PathOfExileItem(
-                        name=normal_progressive_flask[0]["name"],
-                        classification=ItemClassification.progression,
-                        code=normal_progressive_flask[0]["id"],
-                        player=world.player)
-                    world.precollect(item_obj)
-
-                normal_progressive_flask[0]["count"] -= flasks_needed
-                if normal_progressive_flask[0]["count"] <= 0:
-                    world.items_to_place.pop(normal_progressive_flask[0]["id"], None)
+                    normal_progressive_flask[0]["count"] -= flasks_needed
+                    if normal_progressive_flask[0]["count"] <= 0:
+                        world.items_to_place.pop(normal_progressive_flask[0]["id"], None)
+            else:
+                for i in range(STARTING_FLASK_SLOTS):
+                    world.precollect(world.create_item("Progressive Flask Unlock"))
         return char
 
     starting_character = ""

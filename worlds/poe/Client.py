@@ -352,11 +352,17 @@ class PathOfExileContext(CommonContext):
 
             if self.generated_version != POE_VERSION:
                 if self.generated_version in BACKWARDS_COMPATIBLE_VERSIONS:
-                    log = f"Connected to server with different version: {self.generated_version}, but it is marked as backwards compatible."
+                    log = (f"Connected to multiworld generated with different version: {self.generated_version}, "+
+                           f"running version {POE_VERSION}. This is marked as backwards compatible, and should be OK.")
                     self.logger.info(log)
                     self.command_processor.output(self=self.command_processor, text=log)
                 else:
-                    log = f"--------------------------------------------------------------------------------------------\nServer generated with unsupported version!\nServer:{self.generated_version}\nClient:{POE_VERSION}\nThis may cause issues!!!\n--------------------------------------------------------------------------------------------"
+                    log = (f"-----------------------------------------------------------------------------------------\n"+
+                           f"Server generated with unsupported version!\n"+
+                           f"Server:{self.generated_version}\n"+
+                           f"Client:{POE_VERSION}\n"+
+                           f"This may cause issues!!!\n"+
+                           f"-----------------------------------------------------------------------------------------")
                     self.logger.warning(log)
                     self.command_processor.output(self=self.command_processor, text=log)
 

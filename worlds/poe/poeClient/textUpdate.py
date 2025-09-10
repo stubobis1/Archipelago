@@ -229,7 +229,7 @@ def build_progressive_message(items: list["ItemDict"]) -> str:
         if "Progressive" in item["category"]:
             progressive_count[item["name"]] = progressive_count.get(item["name"], 0) + 1
     for name, count in progressive_count.items():
-        progressive_message += f"{rarity_from_progressive_count(count)} {name}, "
+        progressive_message += f"{rarity_from_progressive_count(count)} {name.replace("Progressive ", "")}, "
     return progressive_message.rstrip(", ")
 
 def rarity_from_progressive_count(count: int) -> str:
