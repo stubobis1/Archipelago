@@ -16,6 +16,9 @@ from pathlib import Path
 from worlds.poe.Locations import base_item_locations_by_base_item_name, LocationDict
 from worlds.poe import Locations
 from worlds.poe.Options import PathOfExileOptions, LootFilterDisplay, LootFilterSounds
+import Utils
+
+logger = logging.getLogger("poeClient.itemFilter")
 
 AP_FILTER_NAME = "__ap"
 INVALID_FILTER_NAME = "__invalid"
@@ -25,7 +28,17 @@ start_item_filter_block = "# <Base Item Hunt item>"
 end_item_filter_block = "# </Base Item Hunt item>"
 
 DEFAULT_POE_DOC_PATH = Path.home() / "Documents" / "My Games" / "Path of Exile"
-poe_doc_path = Path.home() / "Documents" / "My Games" / "Path of Exile"
+
+if Utils.is_windows:
+    from win32com.shell import shell, shellcon
+    # Use modern SHGetKnownFolderPath for better compatibility
+    docs_path = Path(shell.SHGetKnownFolderPath(shellcon.FOLDERID_Documents, 0, None))
+    if docs_path.exists():
+        DEFAULT_POE_DOC_PATH = docs_path / "My Games" / "Path of Exile"
+    else:
+        logging.error("Windows Documents path not found, using hardcoded fallback.")
+
+poe_doc_path = DEFAULT_POE_DOC_PATH
 
 def set_poe_doc_path(new_path: Path | str) -> None:
     global poe_doc_path
@@ -38,7 +51,6 @@ def set_poe_doc_path(new_path: Path | str) -> None:
 
     poe_doc_path = new_path
 
-logger = logging.getLogger("poeClient.itemFilter")
 
 progressive_style_string = f"""
 SetFontSize 45
@@ -65,9 +77,9 @@ MinimapIcon 2 Green UpsideDownHouse
 """
 trap_style_string = f"""
 SetFontSize 45
-SetTextColor 201 117 130 255
+SetBackgroundColor 201 117 130 255
 SetBorderColor 117 194 116 255
-SetBackgroundColor 238 227 147 255
+SetTextColor 238 227 147 255
 MinimapIcon 2 Red Cross
 PlayEffect Red Temp
 """
