@@ -361,7 +361,7 @@ class PathOfExileContext(CommonContext):
 
             if self.generated_version != POE_VERSION:
                 if self.generated_version in BACKWARDS_COMPATIBLE_VERSIONS:
-                    log = (f"Connected to multiworld generated with different version: {self.generated_version}, "+
+                    log = (f"Connected to a multiworld generated with a different version: {self.generated_version}, "+
                            f"running version {POE_VERSION}. This is marked as backwards compatible, and should be OK.")
                     self.logger.info(log)
                     self.command_processor.output(self=self.command_processor, text=log)

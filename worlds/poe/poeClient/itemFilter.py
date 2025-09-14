@@ -1,10 +1,4 @@
 import logging
-# red = 201 117 130 255
-# yellow = 238 227 147 255
-# green = 117 194 116 255
-# blue = 118 126 189 255
-# purp = 201 148 194 255
-# orange = 216 160 125 255
 import typing
 import random
 
@@ -52,6 +46,14 @@ def set_poe_doc_path(new_path: Path | str) -> None:
     poe_doc_path = new_path
 
 
+
+#Archipelago Colors
+# red = 201 117 130 255
+# yellow = 238 227 147 255
+# green = 117 194 116 255
+# blue = 118 126 189 255
+# purp = 201 148 194 255
+# orange = 216 160 125 255
 progressive_style_string = f"""
 SetFontSize 45
 SetTextColor 201 117 130 255
