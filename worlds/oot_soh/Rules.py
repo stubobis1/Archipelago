@@ -178,6 +178,14 @@ def can_jump_slash(state: CollectionState, world: "SohWorld") -> bool:
             can_use(Items.BIGGORONS_SWORD.value, state, world) or
             can_use(Items.MEGATON_HAMMER.value, state, world))  # Hammer can substitute for sword in some cases
 
+def can_cut_shrubs(state: CollectionState, world: "SohWorld") -> bool:
+    return (can_use(Items.KOKIRI_SWORD.value, state, world) or
+            can_use(Items.MASTER_SWORD.value, state, world) or
+            can_use(Items.BIGGORONS_SWORD.value, state, world) or
+            can_use(Items.MEGATON_HAMMER.value, state, world) or
+            can_use(Items.BOOMERANG.value, state, world) or
+            can_use(Items.GORONS_BRACELET.value, state, world) or
+            has_explosives(state, world))
 
 # BELOW IS AI SLOP
 # Based on C++ Logic
