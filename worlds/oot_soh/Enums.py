@@ -3,6 +3,32 @@ from enum import Enum
 class Regions(str, Enum):
     ROOT = "Menu"
     TEMPLE_OF_TIME = "Temple of Time"
+    
+    # Dodongo's Cavern regions
+    DODONGOS_CAVERN_ENTRYWAY = "Dodongos Cavern Entryway"
+    DODONGOS_CAVERN_BEGINNING = "Dodongos Cavern Beginning"
+    DODONGOS_CAVERN_LOBBY = "Dodongos Cavern Lobby"
+    DODONGOS_CAVERN_LOBBY_SWITCH = "Dodongos Cavern Lobby Switch"
+    DODONGOS_CAVERN_SE_CORRIDOR = "Dodongos Cavern SE Corridor"
+    DODONGOS_CAVERN_SE_ROOM = "Dodongos Cavern SE Room"
+    DODONGOS_CAVERN_NEAR_LOWER_LIZALFOS = "Dodongos Cavern Near Lower Lizalfos"
+    DODONGOS_CAVERN_LOWER_LIZALFOS = "Dodongos Cavern Lower Lizalfos"
+    DODONGOS_CAVERN_DODONGO_ROOM = "Dodongos Cavern Dodongo Room"
+    DODONGOS_CAVERN_NEAR_DODONGO_ROOM = "Dodongos Cavern Near Dodongo Room"
+    DODONGOS_CAVERN_STAIRS_LOWER = "Dodongos Cavern Stairs Lower"
+    DODONGOS_CAVERN_STAIRS_UPPER = "Dodongos Cavern Stairs Upper"
+    DODONGOS_CAVERN_COMPASS_ROOM = "Dodongos Cavern Compass Room"
+    DODONGOS_CAVERN_ARMOS_ROOM = "Dodongos Cavern Armos Room"
+    DODONGOS_CAVERN_BOMB_ROOM_LOWER = "Dodongos Cavern Bomb Room Lower"
+    DODONGOS_CAVERN_2F_SIDE_ROOM = "Dodongos Cavern 2F Side Room"
+    DODONGOS_CAVERN_FIRST_SLINGSHOT_ROOM = "Dodongos Cavern First Slingshot Room"
+    DODONGOS_CAVERN_UPPER_LIZALFOS = "Dodongos Cavern Upper Lizalfos"
+    DODONGOS_CAVERN_SECOND_SLINGSHOT_ROOM = "Dodongos Cavern Second Slingshot Room"
+    DODONGOS_CAVERN_BOMB_ROOM_UPPER = "Dodongos Cavern Bomb Room Upper"
+    DODONGOS_CAVERN_FAR_BRIDGE = "Dodongos Cavern Far Bridge"
+    DODONGOS_CAVERN_BOSS_REGION = "Dodongos Cavern Boss Region"
+    DODONGOS_CAVERN_BACK_ROOM = "Dodongos Cavern Back Room"
+    DODONGOS_CAVERN_BOSS_ENTRYWAY = "Dodongos Cavern Boss Entryway"
 
 #TODO go through this and Locations for any that aren't needed or should be events
 #For any such entries, remove them from Items and Locations and add to Events. Also, set up event registration.
