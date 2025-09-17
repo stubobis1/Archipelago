@@ -11,8 +11,19 @@ class SohRegionData(NamedTuple):
 
 region_data_table: Dict[str, SohRegionData] = {
     Regions.ROOT.value: SohRegionData(["Hyrule"]),
-    "Hyrule": SohRegionData(["Dodongos Cavern Entryway"]),
+    "Hyrule": SohRegionData([Regions.ROOT.value, "Dodongos Cavern Entryway", Regions.LW_FOREST_EXIT.value]),
     "Dodongos Cavern Entryway": SohRegionData(["Hyrule"]),
+    # Lost Woods regions
+    Regions.LW_FOREST_EXIT.value: SohRegionData(["Hyrule", Regions.THE_LOST_WOODS.value]),
+    Regions.THE_LOST_WOODS.value: SohRegionData([Regions.LW_FOREST_EXIT.value, Regions.LW_BEYOND_MIDO.value, Regions.LW_SCRUBS_GROTTO.value]),
+    Regions.LW_BEYOND_MIDO.value: SohRegionData([Regions.THE_LOST_WOODS.value, Regions.SFM_ENTRYWAY.value]),
+    Regions.LW_SCRUBS_GROTTO.value: SohRegionData([Regions.THE_LOST_WOODS.value]),
+    # Sacred Forest Meadow regions
+    Regions.SFM_ENTRYWAY.value: SohRegionData([Regions.LW_BEYOND_MIDO.value, Regions.SACRED_FOREST_MEADOW.value, Regions.SFM_WOLFOS_GROTTO.value]),
+    Regions.SACRED_FOREST_MEADOW.value: SohRegionData([Regions.SFM_ENTRYWAY.value, Regions.SFM_FAIRY_GROTTO.value, Regions.SFM_STORMS_GROTTO.value]),
+    Regions.SFM_FAIRY_GROTTO.value: SohRegionData([Regions.SACRED_FOREST_MEADOW.value]),
+    Regions.SFM_WOLFOS_GROTTO.value: SohRegionData([Regions.SFM_ENTRYWAY.value]),
+    Regions.SFM_STORMS_GROTTO.value: SohRegionData([Regions.SACRED_FOREST_MEADOW.value]),
 }
 
 class SohEntranceData(NamedTuple):

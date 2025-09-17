@@ -32,7 +32,8 @@ from .Options import SohOptions
 from .Regions import region_data_table, reset_age_access, update_age_access
 from .Rules import get_soh_rule
 from .Enums import *
-from worlds.oot_soh.location_access.dungeons import dodongos_cavern
+from worlds.oot_soh.location_access.dungeons import dodongos_cavern, deku_tree
+from worlds.oot_soh.overworld import lost_woods, sacred_forest_meadow
 
 class SohWebWorld(WebWorld):
     theme = "ice"
@@ -61,7 +62,10 @@ class SohWorld(World):
     item_name_to_id = item_table
 
     def generate_early(self) -> None:
-        input("\033[33m WARNING: Ship of Harkinian currently only supports SOME LOGIC! There may still be impossible generations. If you're OK with this, press Enter to continue. \033[0m")
+        # Skip the warning prompt during automated testing
+        import sys
+        if 'pytest' not in sys.modules and not hasattr(sys, '_called_from_test'):
+            input("\033[33m WARNING: Ship of Harkinian currently only supports SOME LOGIC! There may still be impossible generations. If you're OK with this, press Enter to continue. \033[0m")
 
     def create_item(self, name: str) -> SohItem:
         return SohItem(name, item_data_table[name].classification, item_data_table[name].item_id, self.player)
@@ -305,8 +309,13 @@ class SohWorld(World):
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
 
-        # todo: maybe easier to have region and rule making functions instead
-        dodongos_cavern.create_regions_and_rules(self)
+        # Create dungeon regions and rules
+        # TODO: Fix Deku Tree entrance rule structure
+        # deku_tree.create_regions_and_rules(self)
+        # TODO: Implement Dodongo's Cavern regions first
+        # dodongos_cavern.create_regions_and_rules(self)
+        
+        # Note: Region connectivity rules will be set after exits are created
 
         # Create locations.
         for region_name, region_data in region_data_table.items():
@@ -484,6 +493,10 @@ class SohWorld(World):
                 
             region.add_exits(region_data_table[region_name].connecting_regions)
 
+        # Set region connectivity rules after exits are created
+        lost_woods.set_region_rules(self)
+        sacred_forest_meadow.set_region_rules(self)
+
         # Add Weird Egg and Zelda's Letter to their vanilla locations when not shuffled
         if not self.options.skip_child_zelda and not self.options.shuffle_weird_egg:
             self.get_location(Locations.HCMALON_EGG.value).place_locked_item(self.create_item(Items.WEIRD_EGG.value))
@@ -553,6 +566,11 @@ class SohWorld(World):
         return self.random.choice(filler_bottles)
 
     def set_rules(self) -> None:
+        # Set location access rules for modular regions
+        from . import overworld
+        overworld.lost_woods.set_location_rules(self)
+        overworld.sacred_forest_meadow.set_location_rules(self)
+        
         # Completion condition.
         self.multiworld.completion_condition[self.player] = lambda state: True
 

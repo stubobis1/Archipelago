@@ -391,3 +391,103 @@ def can_kill_enemy(state: CollectionState, world: "SohWorld", enemy: str, combat
 
     # Default case - assume basic combat is sufficient
     return can_damage(state, world)
+
+
+def can_pass_enemy(state: CollectionState, world: "SohWorld", enemy: str, **kwargs) -> bool:
+    """Check if Link can pass by or defeat an enemy."""
+    # Most enemies can be bypassed by simply killing them
+    return can_kill_enemy(state, world, enemy, **kwargs)
+
+
+def hookshot_or_boomerang(state: CollectionState, world: "SohWorld") -> bool:
+    """Check if Link has hookshot or boomerang."""
+    return (can_use(Items.PROGRESSIVE_HOOKSHOT.value, state, world) or 
+            can_use(Items.BOOMERANG.value, state, world))
+
+
+def blast_or_smash(state: CollectionState, world: "SohWorld") -> bool:
+    """Check if Link can blast with explosives or smash with hammer."""
+    return (has_explosives(state, world) or 
+            can_use(Items.MEGATON_HAMMER.value, state, world))
+
+
+def has_item(state: CollectionState, item: str) -> bool:
+    """Check if player has a specific item."""
+    return state.has(item, state.player)
+
+def can_call_gossip_fairy_except_suns(state: CollectionState, logic: "OOTLogic") -> bool:
+    """Check if player can call gossip fairy (not requiring Sun's Song)."""
+    return can_call_gossip_fairy(state)
+
+def can_call_gossip_fairy(state: CollectionState) -> bool:
+    """Check if player can call gossip fairy."""
+    return (has_item(state, "Zelda's Lullaby") or 
+            has_item(state, "Epona's Song") or 
+            has_item(state, "Song of Time") or 
+            has_item(state, "Song of Storms") or 
+            has_item(state, "Saria's Song"))
+
+def can_use_song_of_storms(state: CollectionState) -> bool:
+    """Check if player can use Song of Storms."""
+    return has_item(state, "Song of Storms")
+
+def can_use_eponas_song(state: CollectionState) -> bool:
+    """Check if player can use Epona's Song."""
+    return has_item(state, "Epona's Song")
+
+def can_spawn_soil_skull(state: CollectionState) -> bool:
+    """Check if player can spawn Gold Skulltula from soil."""
+    return is_child(state) and has_item(state, "Magic Bean") and can_use_song_of_storms(state)
+
+def can_get_night_time_gs(state: CollectionState) -> bool:
+    """Check if player can get night time Gold Skulltula."""
+    return has_item(state, "Sun's Song")
+
+def can_break_pots(state: CollectionState) -> bool:
+    """Check if player can break pots."""
+    return can_attack(state) or has_item(state, "Megaton Hammer")
+
+def can_break_lower_beehives(state: CollectionState) -> bool:
+    """Check if player can break lower beehives."""
+    return (has_item(state, "Fairy Slingshot") or 
+            has_item(state, "Fairy Bow") or 
+            has_item(state, "Hookshot") or 
+            has_item(state, "Longshot") or 
+            has_item(state, "Boomerang"))
+
+def can_cut_shrubs(state: CollectionState) -> bool:
+    """Check if player can cut shrubs/grass."""
+    return (has_item(state, "Kokiri Sword") or 
+            has_item(state, "Master Sword") or 
+            has_item(state, "Biggoron Sword") or 
+            has_item(state, "Deku Stick") or 
+            has_item(state, "Boomerang"))
+
+def has_bottle(state: CollectionState) -> bool:
+    """Check if player has any bottle."""
+    return (has_item(state, "Bottle") or 
+            has_item(state, "Bottle with Milk") or 
+            has_item(state, "Bottle with Red Potion") or 
+            has_item(state, "Bottle with Green Potion") or 
+            has_item(state, "Bottle with Blue Potion") or 
+            has_item(state, "Bottle with Fairy") or 
+            has_item(state, "Bottle with Fish") or 
+            has_item(state, "Bottle with Blue Fire") or 
+            has_item(state, "Bottle with Bugs") or 
+            has_item(state, "Bottle with Poe"))
+
+def is_child(state: CollectionState) -> bool:
+    """Check if player is child Link."""
+    # This will depend on the actual age logic in the mod
+    # For now, assume it's based on certain items or settings
+    return not is_adult(state)
+
+def is_adult(state: CollectionState) -> bool:
+    """Check if player is adult Link."""
+    # This will depend on the actual age logic in the mod
+    # For now, assume having Master Sword indicates adult
+    return has_item(state, "Master Sword")
+
+def can_jumpslash(state: CollectionState) -> bool:
+    """Check if player can perform jumpslash."""
+    return has_item(state, "Kokiri Sword") or has_item(state, "Master Sword") or has_item(state, "Biggoron Sword")
