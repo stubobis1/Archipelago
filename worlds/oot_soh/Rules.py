@@ -154,7 +154,7 @@ def can_hit_eye_targets(state: CollectionState, world: "SohWorld") -> bool:
 
 def can_stun_deku(state: CollectionState, world: "SohWorld") -> bool:
     """Check if Link can stun Deku Scrubs."""
-    return can_attack(state, world) or can_use(Items.DEKU_NUT_BAG.value, state, world) or can_shield(state, world) # Is this right for nuts?
+    return can_attack(state, world) or can_use(Items.NUTS.value, state, world) or can_shield(state, world) # Is this right for nuts?
 
 
 def can_reflect_nuts(state: CollectionState, world: "SohWorld") -> bool:

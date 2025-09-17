@@ -61,7 +61,10 @@ class SohWorld(World):
     item_name_to_id = item_table
 
     def generate_early(self) -> None:
-        input("\033[33m WARNING: Ship of Harkinian currently only supports SOME LOGIC! There may still be impossible generations. If you're OK with this, press Enter to continue. \033[0m")
+        # TODO FOR RELEASE, UNCOMMENT:
+        # input("\033[33m WARNING: Ship of Harkinian currently only supports SOME LOGIC! There may still be impossible generations. If you're OK with this, press Enter to continue. \033[0m")
+        pass
+
 
     def create_item(self, name: str) -> SohItem:
         return SohItem(name, item_data_table[name].classification, item_data_table[name].item_id, self.player)
