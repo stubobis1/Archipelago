@@ -159,6 +159,12 @@ class PathOfExileWorld(World):
         self.total_items_to_place_count = sum(item.get("count", 1) for item in self.items_to_place.values())
         self.locations_to_place = poeRules.SelectLocationsToAdd(world=self, target_amount=self.total_items_to_place_count)
 
+        fake_generation = hasattr(self.multiworld, "generation_is_fake")
+        if fake_generation:  # This is to add support for Universal Tracker
+            logger.debug(f"Generating with all locations, seeing generation_is_fake")
+            self.locations_to_place = [loc for loc in Locations.full_locations.items()]
+            self.bosses_for_goal = list(Locations.bosses.keys())
+
         table_total_item_count = sum(item.get("count", 1) for item in Items.item_table.values())
         if len(self.locations_to_place) <  self.total_items_to_place_count:
             logger.debug(
