@@ -99,4 +99,8 @@ I want to use my own end-game character, and go from nothing to mapping to a bos
 #### OR
 - Create an issue here: [github.com/stubobis1/Archipelago/issues](https://github.com/stubobis1/Archipelago/issues)
 
+Good luck and have fun!
 
+
+
+#### This product isn’t affiliated with or endorsed by Grinding Gear Games in any way.
