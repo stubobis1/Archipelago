@@ -2,14 +2,14 @@
 Hi there! If you're reading this, you've been stranded in Wraeclast for far too long. You think you've done it all. You're looking for a new challenge. Something that has lower stakes than the Gauntlet, maybe more restrictive than SSF, but customizable, and something you can still do with your friends. Well, with this guide, you're going to learn about **Archipelago's Multiworld Randomizers!**
 
 ## What in the name of Innocence is that?
-[Archipelago is an online or locally hosted service](https://archipelago.gg) that can randomize and mix together items and abilities in a game, or multiple games, in order to create a hectic experience that is never the same twice. Using their program, you can krangle the progression of any supported game into a fresh experience, with only a few minutes of preparation!
+[Archipelago is an online or locally hosted service](https://archipelago.gg) that can randomize and mix together items and abilities in a game, or multiple games, in order to create a hectic experience that is never the same twice. Using the multiworld randomizer, you can krangle the progression of any supported game into a fresh experience, with only a few minutes of preparation!
 What's more, multiple, completely different games can be randomized together, with a different person playing through each, discovering upgrades and trap items to help (or hinder) their teammates! 
 For example, Player A completes a mission in Starcraft 2, and discovers Player B's ability to Double Jump in Super Mario 64; this allows Player B to collect the last Star they need to grant Player C the last badge they need to fight the Elite Four in Pokemon Red!
 
 ## Hang on, is this going to get me banned? Path of Exile is always online!
-You're right. Since so much is processed on the backend of POE's servers, we are relatively limited on how we can interact with the client, while still being within the TOS. Rest assured that this program is completely above-board, we have gone to great lengths to stay within the TOS so that nobody gets banned! If that's enough for you, you can skip this next paragraph.
-...
-The Randomizer comes down to a few specific points that are specifically allowed: one-button-one-action macros, reading the Client.txt and API, and editing loot filters. Every process used by the Randomizer only interacts with open information that a normal user could feasibly access, and is limited to sending actions to the server in piecemeal. The program reads the Client to see when you "unlock" something, and also when you're "breaking the rules" and using something you haven't unlocked yet. When you change zones, the API and the Client update and read your inventory to see what you've collected Then, it updates your Loot Filter to highlight items that would let you unlock something, and stop highlighting gear you've already "checked".
+You're right. Since so much is processed on the backend of POE's servers, we are relatively limited on how we can interact with the client, while still being within the TOS. Rest assured that this program is completely above-board, we have gone to great lengths to stay within the TOS so that nobody gets banned! If that's enough for you, you can skip to the next section.
+
+The Randomizer uses specifically allowed actions: one-button-one-action macros, reading the Client.txt and API, and editing loot filters. Every process used by the Randomizer only interacts with open information that a normal user could feasibly access, and updates using Path of Exiles Chat commands. The program reads the Client.txt file to see when you enter a new zone, to "unlock" something, and also when you're "breaking the rules" and using something you haven't unlocked yet. When you change zones, the API and the Client update and read your inventory to see what you've collected. Then, it updates your Loot Filter to highlight items that would let you unlock something, and stop highlighting gear you've already "checked".
 
 ## Can you boil that down for me a little more? ELI5.
 Getting down to brass tacks: 
@@ -23,7 +23,7 @@ Okay, so! You've got a picture of how it works, and what happens in a run. Let's
 **Note: these instructions will be with Windows in mind!** Other operating systems may vary.
 
 ### Before We Begin, you will need:
-* Path of Exile installed and playable. You can [download it from their main website.](https://www.pathofexile.com)
+* Path of Exile installed and playable. You can [download it for free here!](https://www.pathofexile.com)
 * Python 3.12 installed (Python 3.13 will not work). You can [download that here.](https://www.python.org/downloads/release/python-31210)
 Both of those have their own steps, and I believe in you to get them sorted out.
 * Your Path of Exile's `Client.txt` file path.
@@ -39,29 +39,53 @@ Both of those have their own steps, and I believe in you to get them sorted out.
 4. Download the latest version of the PoE .apworld file. 
 ![Download poe.apworld. Again, you DO NOT want the Source files.](https://i.imgur.com/oM7p0kP.png)
 5. Place the `poe.apworld` file you just downloaded into the `custom_worlds` folder of your Archipelago installation.
+
 ![Drag the file itself into the custom_worlds folder. It should not be an archive or in any other folders.](https://i.imgur.com/BVDOAgg.png)
 
 ## Act Two: Generate a Multiworld or Solo Run
+You need to tell the randomizer what sort of run you want to do, and decide what setting to enable. To do this, you need to create a .yaml file, which is a text file that the program can read.
+If you are doing a solo run, then you only need one .yaml file. If you are doing a multiworld with friends, then each person needs their own .yaml file.
+
+There are a couple of ways to do this;
+* Using one of these sites
+  * https://ap.stripesoo7.org/games/Path%20of%20Exile/player-options
+  * https://multiworld.gg/games/Path%20of%20Exile/player-options
+* Generate and edit the yaml directly from the Archipelago Launcher.
+
+### YAML Explanation
+Okay, this one has a LOT of moving parts. As versions progress, some descriptions may change slightly, and some options may be added. Every option has a short paragraph explaining what it does. However, I will briefly explain some of the important settings: 
+
+* **name**: This is the username for your "player slot" in the multiworld. If you're playing solo, you can leave this as is, but when playing with friends, change it to something relevant, like `ChrisWilsonsBeard`or `Mathil2`. 
+* **progression_balancing and accessibility:** TLDR: these make your run easier or harder. I recommend just leaving these alone. 
+* **goal**: This determines what your main objective is. By default, it is set to killing Kitava in Act 10. If you want a different run, then set `complete_the_campaign` to `0`. If you still want an act to be your goal, set your desired Act's completion to `50`. If you want the goal to be beating a given set of bosses, change `defeat_bosses` to 50. In that case, you will also need to define how many bosses you need to beat, and what the pool of them is. 
+* **starting_character**, **ascendancies_available_per_class**, and **allow_unlock_of_other_characters**: This sets what Class you have available at the start, how many Ascendancies can be unlocked through your run, and whether or not other Classes can be unlocked. `starting_character` is set to `random` by default, so if you want one in particular, set that desired class to `50` and `random` to `0`. 
+* **usable_starting_gear**: This determines how many of the items that you get from the Twilight Strand you're allowed to actually use. `starting_weapon_flask_and_gems` means you're playing normally. `starting_weapon_and_gems` means you won't be purely Default Attacking, and is the default. 
+* **add_passive_skill_points_to_item_pool**: This option means that your number of spent skill points is capped, and can only be increased by unlocking a higher total.
+* **add_leveling_up_to_location_pool**: This option means that your character's level can unlock items in the multiworld.
+* **start_inventory**: This is a list of items that you start with. By default, it is empty, but you can add things to it.
+
+
+There are many ways to play Path of Exile randomized. 
+- For a run that still goes through the campaign but doesn't have as much of a grind, you could use an existing character that is already in the late game, respec all the points, deposit all the items, turn on `add_leveling_up_to_location_pool` off, and `add_passive_skill_points_to_item_pool` on, and enjoy! 
+- For just a quick run, you could set the goal act, and start with your class's weapon, gem, and flasks unlocked.
+- Or the standard run, where you start a character in SSF with nothing, and have to unlock everything as you fight though the campaign.
+
+I encourage you to experiment with the settings to find something that works for you!
+
+### Generating wtih the Launcher
 1. Run `ArchipelagoLauncher.exe` either from your installation folder, or a shortcut. 
 ![Just like before, you can find it here.](https://i.imgur.com/VjUVKAR.png)
 2. Generate the Template files for your Game Randomizer settings by clicking Generate Template Options. You can find this button near the bottom of the list, so either scroll down or use the Search bar.
 ![The Generate Template Options button is close to the bottom. Either scroll until you find it, or simply search for "generate" or "template" in the search bar.](https://i.imgur.com/0TgGtyh.png)
 3. Navigate to the `Path of Exile.yaml` template file that was generated, and open it. From the main installation section, you can find it in the Players folder, and then the Templates folder. There will be a LOT of other games in here, so just keep scrolling
 ![The Template File is in the Templates folder, which is in the Players folder of the main installation.](https://i.imgur.com/NfJjGMm.png)
+4. Edit your Randomizer's options by editing the `Path of Exile.yaml` file. 
 
-4. Edit your Randomizer's options by editing the `Path of Exile.yaml` file.
-Okay, this one has a LOT of moving parts. As versions progress, some descriptions may change slightly, and some options may be added. Every option has a short paragraph explaining what it does. However, I will briefly explain some of the important settings: 
-* **name**: This is the username for your "player slot" in the multiworld. If you're playing solo, you can leave this as is, but when playing with friends, change it to something relevant, like `ChrisWilsonsBeard`or `Mathil2`. 
-* **progression_balancing and accessibility:** TLDR: these make your run easier or harder. I recommend just leaving these alone. 
-* **goal**: This determines what your main objective is. By default, it is set to killing Kitava in Act 10. If you want a different run, then set `complete_the_campaign` to `0`. If you still want an act to be your goal, set your desired Act's completion to `50`. If you want the goal to be beating a given set of bosses, change `defeat_bosses` to 50. In that case, you will also need to define how many bosses you need to beat, and what the pool of them is. 
-* **starting_character**, **ascendancies_available_per_class**, and **allow_unlock_of_other_characters**: This sets what Class you have available at the start, how many Ascendancies can be unlocked through your run, and whether or not other Classes can be unlocked. `starting_character` is set to `random` by default, so if you want one in particular, set that desired class to `50` and `random` to `0`. 
-* **usable_starting_gear**: This determines how many of the items that you get from the Twilight Strand you're allowed to actually use. `starting_weapon_flask_and_gems` means you're playing normally. `starting_weapon_and_gems` means you won't be purely Default Attacking, and is the default. 
-* **add_passive_skill_points_to_item_pool**: This option means that your number of spent skill points is capped, and can only be increased by unlocking a higher total. 
-5. Save your changes, and place the edited `.yaml` file into the Players folder.
+Once you have your `.yaml` file set up the way you want, you need to save it, and use it to generate a multiworld. If you're doing a solo run, then it's just your file, take it and place it in the Players folder. If you're generating a multiworld, then each person needs their own `.yaml` file in the Players folder.
 ![Save your .yaml to the Players folder, not the Templates or main folder.](https://i.imgur.com/o19g5bF.png)
 ### Branching Path: If you are playing a solo Randomizer, or are Hosting a Multiworld:
 6. Make sure all relevant `.yaml` files are in the Players folder. If you're solo, then it's just yours, and if this isn't your first run, then ensure that you don't have any old ones in there.
-7. Run `ArchipelagoLauncher.exe`, and click Generate. In longer runs, or runs with several games, this process can take more time, and it's also slightly hardware dependent. However, if you're playing POE, then your computer is plenty strong enough to not take very long here.
+7. Run `ArchipelagoLauncher.exe`, and click Generate. In longer runs, or runs with several games, this process can take more time, and it's also slightly hardware dependent. However, if you're playing Path of Exile, then your computer is plenty strong enough to not take very long here.
 ![The Generate button is close to the top. If you miss it, you can use the search bar.](https://i.imgur.com/r2L3poo.png)
 8. From the [Archipelago website, go to Host Game,](https://archipelago.gg/uploads) and click Upload. This will ask you to select the archive file that was generated into the Output folder.
 ![There is a way to Host runs locally. That option is outside the scope of this guide... mostly because I have never used it.](https://i.imgur.com/0BUfkVx.png)
@@ -85,24 +109,25 @@ If you are not interested, skip to Act Four.
 ![Right here. A shortcut could be helpful to you.](https://i.imgur.com/Bk9f396.png)
 6. Click on the AP button at the top, then fill in the pop-ups with your room's information. If you did that correctly, then the AP button will turn green.
 ![Your tracker will look like this when it's not connected. That itty bitty AP button is the one you want.](https://i.imgur.com/bYpX79B.png)
+7. Sometimes the poptracker will get out of sync with the server. If you think this has happened, then click the refresh button again to fix it.
 
 ## Act Four: Start the Client
 1. From the Launcher, click the button for Path of Exile. This will open up a new window.
 ![Scroll down until you find the entry for Path of Exile, or use the search bar at the top of the menu.](https://i.imgur.com/k25azjs.png)
 2. At first, the screen will have a list of useful commands to use. In the top bar labeled `Server`, enter the server address and port, and click Connect. Then, enter the name you used in your `.yaml` file at the bottom when prompted.
 ![We will use these commands in the steps ahead!](https://i.imgur.com/sOgGAvj.png)
-3. The client should tell you which class you have access to. If you have **not** set up the PopTracker, then if it didn't tell you, use the `/received` command.
+3. The client should tell you which class you have access to, this can also be found by using the `/received` command, or in the poptracker.
 ![You can use /received later as well, but if you do, then it will include EVERYTHING you have unlocked.](https://i.imgur.com/wy2IPp7.png)
-4. Use the `/poe_auth` command to authenticate your session with PoE's servers, and click Authorize. This is a security measure to keep your account information safe from sketchy services, and explains exactly what information will be shared. As you can see, the only information being requested is information that would be visible to anyone looking at your profile online.
+4. Use the `/poe_auth` command to authenticate your session with PoE's servers, and click Authorize. This is how the client is able to get information from your account. It is secure, to keep your account information safe from sketchy services, and explains exactly what information will be shared. As you can see, the only information being requested is information that would be visible to anyone looking at your profile online.
 ![This is a security measure to keep you informed about what information services are requesting. Archipelago doesn't need any info that wouldn't be visible at a glance on your website profile page.](https://i.imgur.com/xhkS4yq.png)
-5. In Path of Exile, create your character. I generally recommend a SSF character, to make sure that you are only using the items that you find during this run. Note your character name for the next step.
+5. In Path of Exile, choose your character. Note your character name for the next step.
 6. Use the `/char` command **followed by your character's name** in the Archipelago Client to set which character the Randomizer is tracking.
 ![This one's easy.](https://i.imgur.com/nCGocCk.png)
 7.  Set your  `client.txt`  path by using the  `/client "C:\File\Path\Here"` command.  Adjust the file path as needed - you did write this down earlier when I asked, right? Note the Quotation marks, they ARE important!
 ![You MUST include the quotation marks, but you don't need to append "Client.txt", the program can detect that on its own.](https://i.imgur.com/IOPNHEW.png)
 8. Set your base item filter by using the `/filter <filterNameHere>.filter` command. This needs to be an item filter that you've saved locally, not one that you've subscribed to. Usually, this place is something like `C:\Users\<USERNAME>\Documents\My Games\Path of Exile`. I created a custom filter specifically for Archipelago, but you can use any filter as a base, such as one of the Neversink variants.
 ![I created a custom filter specifically for Archipelago, but you can use any filter as a base, such as one of the Neversink variants.](https://i.imgur.com/pEnvwWf.png)
-9. If you have enabled Deathlink in your `.yaml` settings, you will need to use the `/deathlink` command to toggle it on or off.
+9. if you want to change your deathlink setting, you can use the `/deathlink` command to toggle it on or off.
 10. Use the `/start` command to officially start your run. If you did the above steps properly, then you should see something like this image: a weird yellow-ish weapon label on the ground - indicating that it's an item you haven't checked yet - and the message `Item Filter loaded successfully.` in chat. 
 ![If you reached this point and did it all properly, then what you see should be something like this.](https://i.imgur.com/JpgjZ4Z.png)
 # Epilogue: Tips, Tricks, and Commands
@@ -139,7 +164,7 @@ This is a short and sweet, quick reference list of commands that you might want 
 - If you're using a gem you shouldn't be, too many flasks, or any other thing that you don't have unlocked, then you are considered "Out of Logic" and will be unable to send Unlocks until you resolve this issue! The in-game chat will message you with a brief explanation.
 - Make sure your PoE logs are being read (client should detect zone changes and chat whispers). If you haven't seen any update in a while, make sure that your file paths are set correctly.
 - F11 will restart the client if you run into issues.
-- F12 will force the client to do a check. The API still only updates when changing zones, but this is helpful if something gets messed up. (Such as if Archipelago can't read the client.txt file for some reason.)
+- F12 will force the client to do a check. The API still only updates when changing zones, but this is helpful if something gets messed up. (Such as if the client.txt is unreadable, or you move in a new zone before the command is sent.)
 - If you get problems when you are trying to write the filter, it could be Windows OneDrive interfering. Try disabling OneDrive. 
 
 ## Personal Advice
@@ -151,157 +176,4 @@ After playing through a few runs, I've learned a few pieces of advice that might
 * Many skills are considered Bad in endgame, but if all you have to do is kill Kitava, then there are many, many more options on the table. Use the tools you have!
 * If you're diligent in picking up items, then it's very likely that you'll fully clean up the list of checks as you go through an act. Speedrunning is nice, but remember, more loot means more unlocks!
 * **Most important above all else:** This is still a game. *If you're having fun, that's the only thing that matters!*
-<!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzMTM3ODU2MDgsMTE1NzYzNDcyMiwxNT
-k4OTIwNzEyLDkwODc1MDk0NiwxOTQ1NjYwMDI1LDU5MDY5OTgx
-Nl19
--->
-
 ---
-
-## 1) Prerequisites
-
-- Path of Exile installed and playable.
-- Python 3.12 installed. (Python 3.13 will not work)
-- Archipelago (latest release).
-- The Path of Exile `.apworld` file from the Path of Exile APWorld release page. 
-  - [github.com/stubobis1/Archipelago/releases](https://github.com/stubobis1/Archipelago/releases)
-
----
-
-## 2) Download & Install Archipelago
-
-1. Download the latest Archipelago release:
-   - [github.com/ArchipelagoMW/Archipelago/releases](https://github.com/ArchipelagoMW/Archipelago/releases)
-2. Install Python if needed:
-   - [python.org/downloads/release/python-31210/](https://www.python.org/downloads/release/python-31210/)
-3. Extract the Archipelago release to a folder of your choice (e.g., `C:\Games\Archipelago` or `~/Archipelago`).
-
----
-
-## 3) Add the Path of Exile .apworld
-
-1. Download the `.apworld`:
-   - [github.com/stubobis1/Archipelago/releases](https://github.com/stubobis1/Archipelago/releases)
-2. Place the `.apworld` file into the `Archipelago/custom_worlds/` folder.
-
----
-
-## 4) Generate / Join a Multiworld
-
-1. Launch `ArchipelagoLauncher.exe` from your Archipelago folder.
-2. Generate Template Options
-3. Modify `Archipelago/Players/Templates/Path of Exile.yaml` to change options to your liking.
-4. Setup a Multiworld session:
-  - If self-hosting / playing single player:
-    - place the `Path of Exile.yaml` in your Players directory
-    - run `ArchipelagoLauncher.exe`
-    - Select **Generate Game**.
-    - Select **Host**, and select the generated file from `/output`
-    - By default the server will run on port `38281`
-  - If playing with others:
-    - Send your `yaml` to whomever is generating and hosting
-    - Get your slot name from the host, and the server address (IP or domain) and port.
-
-
----
-
-## 5) Setup Poptracker (Optional but Highly Recommended)
-
-1. Download Poptracker from: [github.com/black-sliver/PopTracker/releases](https://github.com/black-sliver/PopTracker/releases)
-2. Extract / Setup Poptracker to a folder of your choice.
-3. Download the PoE Archipelago Poptracker pack from: [github.com/stubobis1/PathOfExilePoptracker/releases](https://github.com/stubobis1/PathOfExilePoptracker/releases)
-4. Place the zip file into the `poptracker/packs` directory.
-5. Launch `PopTracker.exe`.
-6. Click on the `AP` button at the top.
-7. Enter your slot name and server address from step 4. (Example: `127.0.0.1:38281`, slot `Player1`, no password)
-8. If the `AP` button is green you are connected.
-
-
----
-
-## 6) Start the Client
-
-1. In `ArchipelagoLauncher.exe` run `Path of Exile` from the client list.
-2. Enter the slot name and server address in the top bar 
-   - something like `Player1:@127.0.0.1:38281` 
-     - (note the `:` after the slot name is where you would put the password, if one was set by the host).
-3. Click **Connect**.
-4. (optional) Run `/received` to see which class you have received. (not needed if you setup poptracker)
-5. Run `/poe_auth` in the client console to authenticate your PoE account.
-6. Set the character you will be playing with `/char YourCharacterName`.
-7. Set your `client.txt` path by running `/client "C:\PathOfExile\logs\Client.txt"` (adjust path as needed). Note the Quotation marks.
-8. Set your item filter path by running `/filter <filterName>.filter` 
-    - this should be a local filter, and exist at something like `C:\Users\<USERNAME>\Documents\My Games\Path of Exile`
-9. (Optional) Enable or Disable DeathLink with `/deathlink` if you want to share deaths with other players.
-10. If you haven't already, Launch Path of Exile and **LOGIN**. 
-11. Run `/start` in the client.
-12. Start playing Path of Exile!
-    - Enter a zone to trigger an initial check.
-    - Pick up items to unlock things.
-    - Change zones to send checks for newly found items/conditions.
-
-
----
-
-
-## 7) In‑Game Chat Commands (Whisper Yourself)
-
-Send whispers **to your own character** using `@YourCharacterName` followed by a command. Example:
-```
-@YourCharacterName !gems
-```
-
-Commands:
-```
-!ap char                  - Set your character
-!deathlink                - Toggle DeathLink
-!goal                     - View your current goal
-!passive or !p            - List usable passive points
-!usable skill gems        - List usable skill gems (by level)
-!usable support gems      - List usable support gems
-!usable utility gems      - List usable utility gems
-!usable gems              - List all usable gems
-!main gems                - Show main skill gems received
-!support gems             - Show support gems received
-!utility gems             - Show utility gems received
-!all gems or !gems        - Show all gems received
-!gear                     - Show usable gear
-!weapons                  - Show usable weapons
-!armor                    - Show usable armor
-!links                    - Show maximum link allowance
-!flasks                   - Show flask unlocks
-!ascendancy               - Show unlocked ascendancies
-!help                     - Show help message
-```
-
-Note: Commands must be whispered to **yourself** (not global chat) using `@YourCharacterName`.
-
----
-
-## 8) Tips & Troubleshooting
-
-- If you get problems when you are trying to write the filter, it could be Windows OneDrive interfering. Try disabling OneDrive.
-- Keep the Archipelago client running while you play PoE.
-- If you pick up an item and no check is sent, **enter a new zone** to trigger a check.
-- Make sure your PoE logs are being read (client should detect zone changes and chat whispers).
-- If your normal item filter isn't working, load it with `/filter` in the client console.
-- OAuth/API: Ensure your PoE account is properly authenticated if the client needs character data from the API.
-- DeathLink: When enabled, your deaths (and others’) can be shared as events across players.
-- F11 will restart the client if you run into issues.
-- F12 will force the client to do a check. 
-  - The API still only updates when changing zones, but this is helpful if something gets messed up. (AP can't read the client.txt file)
-
----
-
-## 9) Quick Start Summary
-
-1. Install Python (3.12) and Archipelago.
-2. Drop the PoE `.apworld` into `Archipelago/custom_worlds/`.
-3. Use the Launcher to generate or connect to a multiworld.
-4. Start playing PoE with the client open.
-5. Whisper yourself for status/info commands and change zones to send checks.
-
----
-
-Happy mapping, and good luck with your drops!
