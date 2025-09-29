@@ -614,10 +614,8 @@ def can_pass_enemy(state: CollectionState, world: "SohWorld", enemy: Enum) -> bo
 def can_cut_shrubs(state: CollectionState, world: "SohWorld") -> bool:
     """Check if Link can cut shrubs (grass, bushes)."""
     return (can_use_sword(state, world) or
-            can_use(Items.BOOMERANG, state, world) or 
-            has_explosives(state, world) or
-            can_use(Items.GORONS_BRACELET, state, world) or
-            can_use(Items.MEGATON_HAMMER, state, world))
+            can_use_any([Items.BOOMERANG, Items.GORONS_BRACELET, Items.MEGATON_HAMMER], state, world) or
+            has_explosives(state, world))
 
 
 def hookshot_or_boomerang(state: CollectionState, world: "SohWorld") -> bool:
