@@ -701,4 +701,47 @@ def can_detonate_upright_bomb_flower(state: CollectionState, world: "SohWorld") 
                     or can_use(Items.NAYRUS_LOVE, state, world)
                 ))
 
-            ) 
+            )
+
+
+def has_fire_timer(state: CollectionState, world: "SohWorld", required_time: int) -> bool:
+    """Check if player has fire protection (Goron Tunic) and meets time requirement.
+    
+    Args:
+        state: Current game state
+        world: World instance
+        required_time: Minimum time requirement in seconds
+        
+    Returns:
+        True if player can survive in fire areas for the required time
+    """
+    # For now, we just check if player has Goron Tunic
+    # The time requirement would need more complex logic based on health/protection
+    return can_use(Items.GORON_TUNIC, state, world)
+
+
+def has_small_keys(state: CollectionState, world: "SohWorld", required_amount: int) -> bool:
+    """Check if player has enough Fire Temple small keys.
+    
+    Args:
+        state: Current game state
+        world: World instance
+        required_amount: Number of keys required
+        
+    Returns:
+        True if player has enough Fire Temple small keys
+    """
+    return small_keys(Items.FIRE_TEMPLE_SMALL_KEY, required_amount, state, world)
+
+
+def can_take_damage(state: CollectionState, world: "SohWorld") -> bool:
+    """Alias for take_damage function for compatibility.
+    
+    Args:
+        state: Current game state
+        world: World instance
+        
+    Returns:
+        True if player can take damage (same as take_damage)
+    """
+    return take_damage(state, world) 
