@@ -18,8 +18,8 @@ MAX_LINK_UPGRADES       = 22
 MAX_SKILL_GEMS          = 50 # you will get more, but this is the max required for "logic"
 MAX_SUPPORT_GEMS        = 50 # you will get more, but this is the max required for "logic"
 
-_debug = False
-_very_debug = False
+_debug = True
+_very_debug = True
 if Items.ACT_0_USABLE_GEMS + Items.ACT_0_WEAPON_TYPES + Items.ACT_0_ARMOUR_TYPES + Items.ACT_0_FLASK_SLOTS > 19:
     raise Exception("Act 0 requirements are too high, there are not enough locations in early act 1 to satisfy them")
 
@@ -52,27 +52,40 @@ def get_ascendancy_amount_for_act(act, opt):
         )
     ) if act >= 3 else 0
 
-def get_gear_amount_for_act(act, opt): return min(opt.gear_upgrades_per_act.value * (act - 1), MAX_GEAR_UPGRADES if opt.gucci_hobo_mode.value == opt.gucci_hobo_mode.option_disabled else MAX_GUCCI_GEAR_UPGRADES)
-def get_flask_amount_for_act(act, opt): return 0 if not opt.add_flasks_to_item_pool else min(opt.flasks_per_act.value * (act - 1), MAX_FLASK_SLOTS)
-def get_gem_amount_for_act(act, opt): return 0 if not opt.add_max_links_to_item_pool else min(opt.max_links_per_act.value * (act - 1), MAX_LINK_UPGRADES)
-def get_skill_gem_amount_for_act(act, opt): return min(opt.skill_gems_per_act.value * (act - 1), MAX_SKILL_GEMS)
-def get_support_gem_amount_for_act(act, opt): return min(opt.support_gems_per_act.value * (act - 1), MAX_SUPPORT_GEMS)
-def get_passives_amount_for_act(act, opt): return passives_required_for_act.get(act, 0) if opt.add_passive_skill_points_to_item_pool.value else 0
+def get_gear_amount_for_act(act, opt):
+    max_gear = 0
+    if opt.gucci_hobo_mode.value == opt.gucci_hobo_mode.option_disabled:
+        max_gear = MAX_GEAR_UPGRADES
+    elif opt.gucci_hobo_mode.value == opt.gucci_hobo_mode.option_no_non_unique_items:
+        max_gear = MAX_GUCCI_GEAR_UPGRADES
+    else:
+        max_gear = MAX_GUCCI_GEAR_UPGRADES + 1 # allow one non-unique item
+    return min(opt.gear_upgrades_per_act.value * (act - 1), max_gear)
+
+def get_flask_amount_for_act(act, opt):
+    return 0 if not opt.add_flasks_to_item_pool else min(opt.flasks_per_act.value * (act - 1), MAX_FLASK_SLOTS)
+
+def get_gem_amount_for_act(act, opt):
+    return 0 if not opt.add_max_links_to_item_pool else min(opt.max_links_per_act.value * (act - 1), MAX_LINK_UPGRADES)
+
+def get_skill_gem_amount_for_act(act, opt):
+    return min(opt.skill_gems_per_act.value * (act - 1), MAX_SKILL_GEMS)
+
+def get_support_gem_amount_for_act(act, opt):
+    return min(opt.support_gems_per_act.value * (act - 1), MAX_SUPPORT_GEMS)
+
+def get_passives_amount_for_act(act, opt):
+    return passives_required_for_act.get(act, 0) if opt.add_passive_skill_points_to_item_pool.value else 0
 
 def completion_condition(world: "PathOfExileWorld",  state: CollectionState) -> bool:
     if len(world.bosses_for_goal) > 0:
-        # if we can reach act 11, we can assume we have completed the goal
+        # if we can reach act 11, we can assume the world is completable.
         return can_reach(11, world, state)
-    #    # if there are bosses for the goal, we need to check if they are all completed
-    #    for boss in world.bosses_for_goal:
-    #        if not state.has(f"complete {boss}", world.player):
-    #            return False
-    #    return True
 
     else: # reach act for goal
         return can_reach(world.goal_act, world, state)
 
-def can_reach(act: int, world , state: CollectionState) -> bool:
+def can_reach(act: int, world, state: CollectionState) -> bool:
     opt : PathOfExileOptions = world.options
 
     if opt.disable_generation_logic.value:
@@ -82,7 +95,7 @@ def can_reach(act: int, world , state: CollectionState) -> bool:
     if act < 1:
         return True
 
-    ascedancy_amount = get_ascendancy_amount_for_act(act, opt)
+    ascendancy_amount = get_ascendancy_amount_for_act(act, opt)
     gear_amount = get_gear_amount_for_act(act, opt)
     flask_amount = get_flask_amount_for_act(act, opt)
     gem_slot_amount = get_gem_amount_for_act(act, opt)
@@ -148,7 +161,7 @@ def can_reach(act: int, world , state: CollectionState) -> bool:
                 pass
 
 
-    reachable &= ascedancy_count >= ascedancy_amount and \
+    reachable &= ascedancy_count >= ascendancy_amount and \
             gear_count >= gear_amount and \
             flask_count >= flask_amount and \
             gem_slot_count >= gem_slot_amount and \
@@ -169,8 +182,8 @@ def can_reach(act: int, world , state: CollectionState) -> bool:
                 log += f" support gems: {support_gem_count}/{support_gem_amount},"
             if usable_skill_gem_count < skill_gem_amount:
                 log += f" skill gems: {usable_skill_gem_count}/{skill_gem_amount},"
-            if ascedancy_count < ascedancy_amount:
-                log += f" ascendancies: {ascedancy_count}/{ascedancy_amount},"
+            if ascedancy_count < ascendancy_amount:
+                log += f" ascendancies: {ascedancy_count}/{ascendancy_amount},"
             if passive_count < passive_amount:
                 log += f" levels:{passive_count}/{passive_amount}"
             log += f" for {opt.starting_character.current_option_name}"
