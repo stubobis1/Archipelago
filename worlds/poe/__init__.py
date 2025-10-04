@@ -73,6 +73,13 @@ class PathOfExileWorld(World):
     options_dataclass = PathOfExileOptions
     origin_region_name = "Menu"
 
+    MAX_GUCCI_GEAR_UPGRADES = 19 # fishing rods don't count.
+    MAX_GEAR_UPGRADES       = 50
+    MAX_FLASK_SLOTS         = 10
+    MAX_LINK_UPGRADES       = 22
+    MAX_SKILL_GEMS          = 50 # you will get more, but this is the max required for "logic"
+    MAX_SUPPORT_GEMS        = 50 # you will get more, but this is the max required for "logic"
+
 # Instance variables, but made in __init__ so they are per-instance
 #    items_to_place = {}
 #    items_procollected = {}
@@ -99,6 +106,12 @@ class PathOfExileWorld(World):
         self.total_items_to_place_count = 0
         self.goal_act = 0
         self.bosses_for_goal: list[str] = []
+
+        self.placed_total_gear_upgrades = 0
+        self.placed_total_flask_slots   = 0
+        self.placed_total_link_upgrades = 0
+        self.placed_total_skill_gems    = 0
+        self.placed_total_support_gems  = 0
 
         super().__init__(*args, **kwargs)
 
@@ -151,7 +164,7 @@ class PathOfExileWorld(World):
 
             self.bosses_for_goal = self.random.sample(sorted(opt.bosses_available.value), bosses_to_kill)
 
-        setup_early_items(self, opt)
+        setup_early_items(self)
 
         self.items_to_place = Items.deprioritize_non_logic_gems(self, self.items_to_place)
         self.items_to_place = Items.deprioritize_non_logic_gear(self, self.items_to_place)
@@ -273,8 +286,9 @@ class PathOfExileWorld(World):
                                 self.player])
 
 # ---------
-def setup_early_items(world: PathOfExileWorld, options: PathOfExileOptions):
-    setup_character_items(world, options)
+def setup_early_items(world: PathOfExileWorld):
+    options: PathOfExileOptions = world.options
+    setup_character_items(world)
     max_level = Locations.acts[world.goal_act]["maxMonsterLevel"]
     
     if options.gucci_hobo_mode.value != options.gucci_hobo_mode.option_disabled:
@@ -360,6 +374,12 @@ def setup_early_items(world: PathOfExileWorld, options: PathOfExileOptions):
                 world.precollect(item_obj)
     cleanup_gear_based_on_progressive_option(options, world)
 
+    world.placed_total_gear_upgrades = min(len(Items.get_gear_items(table=world.items_to_place)), world.MAX_GUCCI_GEAR_UPGRADES)
+    world.placed_total_flask_slots   = min(len(Items.get_flask_items(table=world.items_to_place)), world.MAX_GEAR_UPGRADES)
+    world.placed_total_link_upgrades = min(len(Items.get_max_links_items(table=world.items_to_place)), world.MAX_FLASK_SLOTS)
+    world.placed_total_skill_gems    = min(len(Items.get_main_skill_gem_items(table=world.items_to_place)), world.MAX_LINK_UPGRADES)
+    world.placed_total_support_gems  = min(len(Items.get_support_gem_items(table=world.items_to_place)), world.MAX_SKILL_GEMS)
+
 def cleanup_gear_based_on_progressive_option(options, world):
     gucci_mode = not (options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_disabled)
 
@@ -384,7 +404,8 @@ def cleanup_gear_based_on_progressive_option(options, world):
     return None
 
 
-def setup_character_items(world, options):
+def setup_character_items(world: PathOfExileWorld):
+    options: PathOfExileOptions = world.options
     def handle_starting_character(char):
         item_obj = world.remove_and_create_item_by_name(char)
         world.precollect(item_obj)

@@ -11,12 +11,7 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger("poe.Rules")
 logger.setLevel(logging.DEBUG)
 
-MAX_GUCCI_GEAR_UPGRADES = 19 # fishing rods don't count.
-MAX_GEAR_UPGRADES       = 50
-MAX_FLASK_SLOTS         = 10
-MAX_LINK_UPGRADES       = 22
-MAX_SKILL_GEMS          = 50 # you will get more, but this is the max required for "logic"
-MAX_SUPPORT_GEMS        = 50 # you will get more, but this is the max required for "logic"
+
 
 _debug = True
 _very_debug = True
@@ -44,38 +39,31 @@ passives_required_for_act = {
     12: 136,  # max amount of passives in the game (including ascendancy points)
 }
 
-def get_ascendancy_amount_for_act(act, opt):
+def get_ascendancy_amount_for_act(act, world: "PathOfExileWorld"):
     return (
         min(
-            opt.ascendancies_available_per_class.value,
-            3 if opt.starting_character.value != opt.starting_character.option_scion else 1
+            world.options.ascendancies_available_per_class.value,
+            3 if world.options.starting_character.value != world.options.starting_character.option_scion else 1
         )
     ) if act >= 3 else 0
 
-def get_gear_amount_for_act(act, opt):
-    max_gear = 0
-    if opt.gucci_hobo_mode.value == opt.gucci_hobo_mode.option_disabled:
-        max_gear = MAX_GEAR_UPGRADES
-    elif opt.gucci_hobo_mode.value == opt.gucci_hobo_mode.option_no_non_unique_items:
-        max_gear = MAX_GUCCI_GEAR_UPGRADES
-    else:
-        max_gear = MAX_GUCCI_GEAR_UPGRADES + 1 # allow one non-unique item
-    return min(opt.gear_upgrades_per_act.value * (act - 1), max_gear)
+def get_gear_amount_for_act(act, world: "PathOfExileWorld"):
+    return min(world.options.gear_upgrades_per_act.value * (act - 1), world.placed_total_gear_upgrades)
 
-def get_flask_amount_for_act(act, opt):
-    return 0 if not opt.add_flasks_to_item_pool else min(opt.flasks_per_act.value * (act - 1), MAX_FLASK_SLOTS if opt.add_flasks_to_item_pool.value else 0)
+def get_flask_amount_for_act(act, world: "PathOfExileWorld"):
+    return 0 if not world.options.add_flasks_to_item_pool else min(world.options.flasks_per_act.value * (act - 1), world.placed_total_flask_slots if world.options.add_flasks_to_item_pool.value else 0)
 
-def get_gem_amount_for_act(act, opt):
-    return 0 if not opt.add_max_links_to_item_pool else min(opt.max_links_per_act.value * (act - 1), MAX_LINK_UPGRADES if opt.add_max_links_to_item_pool.value else 0)
+def get_gem_link_amount_for_act(act, world: "PathOfExileWorld"):
+    return 0 if not world.options.add_max_links_to_item_pool else min(world.options.max_links_per_act.value * (act - 1), world.placed_total_link_upgrades if world.options.add_max_links_to_item_pool.value else 0)
 
-def get_skill_gem_amount_for_act(act, opt):
-    return min(opt.skill_gems_per_act.value * (act - 1), MAX_SKILL_GEMS if opt.add_skill_gems_to_item_pool.value else 0)
+def get_skill_gem_amount_for_act(act, world: "PathOfExileWorld"):
+    return min(world.options.skill_gems_per_act.value * (act - 1), world.placed_total_skill_gems if world.options.add_skill_gems_to_item_pool.value else 0)
 
-def get_support_gem_amount_for_act(act, opt):
-    return min(opt.support_gems_per_act.value * (act - 1), MAX_SUPPORT_GEMS if opt.add_support_gems_to_item_pool.value else 0)
+def get_support_gem_amount_for_act(act, world: "PathOfExileWorld"):
+    return min(world.options.support_gems_per_act.value * (act - 1), world.placed_total_support_gems if world.options.add_support_gems_to_item_pool.value else 0)
 
-def get_passives_amount_for_act(act, opt):
-    return passives_required_for_act.get(act, 0) if opt.add_passive_skill_points_to_item_pool.value else 0
+def get_passives_amount_for_act(act, world: "PathOfExileWorld"):
+    return passives_required_for_act.get(act, 0) if world.options.add_passive_skill_points_to_item_pool.value else 0
 
 def completion_condition(world: "PathOfExileWorld",  state: CollectionState) -> bool:
     if len(world.bosses_for_goal) > 0:
@@ -95,13 +83,13 @@ def can_reach(act: int, world: "PathOfExileWorld", state: CollectionState) -> bo
     if act < 1:
         return True
 
-    ascendancy_amount = get_ascendancy_amount_for_act(act, opt)
-    gear_amount = get_gear_amount_for_act(act, opt)
-    flask_amount = get_flask_amount_for_act(act, opt)
-    gem_slot_amount = get_gem_amount_for_act(act, opt)
-    skill_gem_amount = get_skill_gem_amount_for_act(act, opt)
-    support_gem_amount = get_support_gem_amount_for_act(act, opt)
-    passive_amount = get_passives_amount_for_act(act,opt)
+    ascendancy_amount   = get_ascendancy_amount_for_act(act, world)
+    gear_amount         = get_gear_amount_for_act(act, world)
+    flask_amount        = get_flask_amount_for_act(act, world)
+    gem_link_amount     = get_gem_link_amount_for_act(act, world)
+    skill_gem_amount    = get_skill_gem_amount_for_act(act, world)
+    support_gem_amount  = get_support_gem_amount_for_act(act, world)
+    passive_amount      = get_passives_amount_for_act(act,world)
 
     # make a list of valid weapon types, based on the state
 
@@ -164,7 +152,7 @@ def can_reach(act: int, world: "PathOfExileWorld", state: CollectionState) -> bo
     reachable &= ascedancy_count >= ascendancy_amount and \
             gear_count >= gear_amount and \
             flask_count >= flask_amount and \
-            gem_slot_count >= gem_slot_amount and \
+            gem_slot_count >= gem_link_amount and \
             support_gem_count >= support_gem_amount and \
             usable_skill_gem_count >= skill_gem_amount and \
             passive_count >= passive_amount
@@ -173,18 +161,17 @@ def can_reach(act: int, world: "PathOfExileWorld", state: CollectionState) -> bo
         if _debug:
             log = f"Act {act} not reachable with:"
             if gear_count < gear_amount:
-                log += f"gear: {gear_count}/{gear_amount} (total: {len(Items.get_gear_items(world.items_to_place))}),"
+                log += f"gear: {gear_count}/{gear_amount}, full_amount: {world.placed_total_gear_upgrades},"
             if flask_count < flask_amount:
-                log += f" flask: {flask_count}/{flask_amount},"
-            if gem_slot_count < gem_slot_amount:
-                amount = Items.get_max_links_items(world.items_to_place)
-                log += f" gem slots: {gem_slot_count}/{gem_slot_amount}, full_amount: {amount}"
+                log += f" flask: {flask_count}/{flask_amount}, full_amount: {world.placed_total_flask_slots}"
+            if gem_slot_count < gem_link_amount:
+                log += f" gem links: {gem_slot_count}/{gem_link_amount}, full_amount: {world.placed_total_link_upgrades}"
             if support_gem_count < support_gem_amount:
-                log += f" support gems: {support_gem_count}/{support_gem_amount},"
+                log += f" support gems: {support_gem_count}/{support_gem_amount}, full_amount: {world.placed_total_support_gems}"
             if usable_skill_gem_count < skill_gem_amount:
-                log += f" skill gems: {usable_skill_gem_count}/{skill_gem_amount},"
+                log += f" skill gems: {usable_skill_gem_count}/{skill_gem_amount}, full_amount: {world.placed_total_skill_gems}"
             if ascedancy_count < ascendancy_amount:
-                log += f" ascendancies: {ascedancy_count}/{ascendancy_amount},"
+                log += f" ascendancies: {ascedancy_count}/{ascendancy_amount}"
             if passive_count < passive_amount:
                 log += f" levels:{passive_count}/{passive_amount}"
             log += f" for {opt.starting_character.current_option_name}"
@@ -231,22 +218,22 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
         lvl_locs = [loc for loc in level_locations.values() if loc["level"] is not None and loc["level"] <= max_level]
         total_available_locations.extend(lvl_locs)
 
-    def total_needed_by_act(act: int, opt: PathOfExileOptions) -> int:
+    def total_needed_by_act(act: int) -> int:
         if act < 1:
             return 0
         needed_locations = 0
         needed_locations += Items.ACT_0_USABLE_GEMS + Items.ACT_0_WEAPON_TYPES + Items.ACT_0_ARMOUR_TYPES + Items.ACT_0_FLASK_SLOTS + Items.ACT_0_ADDITIONAL_LOCATIONS
-        needed_locations += get_ascendancy_amount_for_act(act, opt)
-        needed_locations += get_gear_amount_for_act(act, opt)
-        needed_locations += get_flask_amount_for_act(act, opt)
-        needed_locations += get_gem_amount_for_act(act, opt)
-        needed_locations += get_skill_gem_amount_for_act(act, opt)
-        needed_locations += get_passives_amount_for_act(act, opt)
+        needed_locations += get_ascendancy_amount_for_act(act, world)
+        needed_locations += get_gear_amount_for_act(act, world)
+        needed_locations += get_flask_amount_for_act(act, world)
+        needed_locations += get_gem_link_amount_for_act(act, world)
+        needed_locations += get_skill_gem_amount_for_act(act, world)
+        needed_locations += get_passives_amount_for_act(act, world)
         return needed_locations
 
 
     for act in range(1, goal_act + 1):
-        needed_locations_for_act = total_needed_by_act(act, opt) - total_needed_by_act(act - 1, opt)
+        needed_locations_for_act = total_needed_by_act(act) - total_needed_by_act(act - 1)
         locations_in_act = [loc for loc in total_available_locations if loc["act"] == act]
     
         if not locations_in_act:

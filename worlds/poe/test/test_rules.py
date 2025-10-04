@@ -7,7 +7,7 @@ from BaseClasses import CollectionState
 from worlds.poe import Rules
 from worlds.poe.Rules import (
     get_ascendancy_amount_for_act, get_gear_amount_for_act, get_flask_amount_for_act,
-    get_gem_amount_for_act, get_skill_gem_amount_for_act, get_support_gem_amount_for_act,
+    get_gem_link_amount_for_act, get_skill_gem_amount_for_act, get_support_gem_amount_for_act,
     get_passives_amount_for_act, completion_condition, can_reach, SelectLocationsToAdd
 )
 from . import PoeTestBase
@@ -73,12 +73,12 @@ class TestActRequirementFunctions(unittest.TestCase):
     
     def test_get_gem_amount_for_act(self):
         """Test gem slot amount calculation"""
-        self.assertEqual(get_gem_amount_for_act(1, self.mock_opt), 0)
-        self.assertEqual(get_gem_amount_for_act(3, self.mock_opt), 6)  # 3 * 2
+        self.assertEqual(get_gem_link_amount_for_act(1, self.mock_opt), 0)
+        self.assertEqual(get_gem_link_amount_for_act(3, self.mock_opt), 6)  # 3 * 2
         
         # Test with max links disabled
         self.mock_opt.add_max_links_to_item_pool = False
-        self.assertEqual(get_gem_amount_for_act(3, self.mock_opt), 0)
+        self.assertEqual(get_gem_link_amount_for_act(3, self.mock_opt), 0)
     
     def test_get_skill_gem_amount_for_act(self):
         """Test skill gem amount calculation"""
