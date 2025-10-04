@@ -277,24 +277,8 @@ def setup_early_items(world: PathOfExileWorld, options: PathOfExileOptions):
     setup_character_items(world, options)
     max_level = Locations.acts[world.goal_act]["maxMonsterLevel"]
     
-    if options.progressive_gear.value == options.progressive_gear.option_enabled:
-        for item in Items.get_by_category(category="Random Gear", table=world.items_to_place):
-            world.items_to_place.pop(world.item_name_to_id[item["name"]], None)
-    elif options.progressive_gear.value == options.progressive_gear.option_disabled:
-        for item in Items.get_by_category(category="Progressive Gear", table=world.items_to_place):
-            world.items_to_place.pop(world.item_name_to_id[item["name"]], None)
-    elif options.progressive_gear.value == options.progressive_gear.option_progressive_except_for_unique:
-        for item in Items.get_by_category(category="Progressive Gear", table=world.items_to_place):
-            if "Flask" not in item["category"]:
-                item["count"] -= 1
-            elif "Flask" in item["category"]:
-                item["count"] -= 5
-        for item in Items.get_by_category(category="Random Gear", table=world.items_to_place):
-            if "Unique" not in item["category"]:
-                world.items_to_place.pop(world.item_name_to_id[item["name"]], None)
-    
     if options.gucci_hobo_mode.value != options.gucci_hobo_mode.option_disabled:
-        uniques = [item for item in Items.item_table.values() if "Unique" in item["category"]]
+        uniques = [item for item in world.items_to_place.values() if "Unique" in item["category"] and "Fishing Rod" not in item["category"]]
         for unique in uniques:
             unique["classification"] = ItemClassification.progression
             
@@ -305,13 +289,13 @@ def setup_early_items(world: PathOfExileWorld, options: PathOfExileOptions):
                 if "Magic" in item["category"] or "Rare" in item["category"]:
                     world.items_to_place.pop(item["id"])
 
-        if (options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_no_non_unique_items):
+        if options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_no_non_unique_items:
             for item in gear_upgrades:
                 if "Normal" in item["category"]:
                     world.items_to_place.pop(item["id"])
     # remove passive skill points from item pool
     # we are using the slot_data to tell the client to chill out when it comes to passive skill points
-    if options.add_passive_skill_points_to_item_pool.value == False:
+    if options.add_passive_skill_points_to_item_pool.value == False: # remove passive points from item pool
         item = Items.get_by_name("Progressive passive point", world.items_to_place)
         if item:
             # there is only one itemDict for passive points, but has a count of how many items to add. This removal should work
@@ -374,6 +358,31 @@ def setup_early_items(world: PathOfExileWorld, options: PathOfExileOptions):
             item_objs = world.remove_and_create_items_by_itemdict(item)
             for item_obj in item_objs:
                 world.precollect(item_obj)
+    cleanup_gear_based_on_progressive_option(options, world)
+
+def cleanup_gear_based_on_progressive_option(options, world):
+    gucci_mode = not (options.gucci_hobo_mode.value == options.gucci_hobo_mode.option_disabled)
+
+    if options.progressive_gear.value == options.progressive_gear.option_enabled and not gucci_mode:
+        for item in Items.get_by_category(category="Random Gear", table=world.items_to_place):
+            world.items_to_place.pop(world.item_name_to_id[item["name"]], None)
+
+    elif options.progressive_gear.value == options.progressive_gear.option_progressive_except_for_unique:
+        for item in Items.get_by_category(category="Progressive Gear", table=world.items_to_place):
+            if "Flask" not in item["category"]:
+                item["count"] -= 1
+            elif "Flask" in item["category"]:
+                item["count"] -= 5
+        for item in Items.get_by_category(category="Random Gear", table=world.items_to_place):
+            if "Unique" not in item["category"]:
+                world.items_to_place.pop(world.item_name_to_id[item["name"]], None)
+
+    #elif options.progressive_gear.value == options.progressive_gear.option_disabled:
+    else: # also if Guci Hobo is enabled, we are going to disable progressive gear, and use random gear upgrades
+        for item in Items.get_by_category(category="Progressive Gear", table=world.items_to_place):
+            world.items_to_place.pop(world.item_name_to_id[item["name"]], None)
+    return None
+
 
 def setup_character_items(world, options):
     def handle_starting_character(char):

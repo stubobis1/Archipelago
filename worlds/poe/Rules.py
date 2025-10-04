@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger("poe.Rules")
 logger.setLevel(logging.DEBUG)
 
-MAX_GUCCI_GEAR_UPGRADES = 20
+MAX_GUCCI_GEAR_UPGRADES = 19 # fishing rods don't count.
 MAX_GEAR_UPGRADES       = 50
 MAX_FLASK_SLOTS         = 10
 MAX_LINK_UPGRADES       = 22
@@ -63,16 +63,16 @@ def get_gear_amount_for_act(act, opt):
     return min(opt.gear_upgrades_per_act.value * (act - 1), max_gear)
 
 def get_flask_amount_for_act(act, opt):
-    return 0 if not opt.add_flasks_to_item_pool else min(opt.flasks_per_act.value * (act - 1), MAX_FLASK_SLOTS)
+    return 0 if not opt.add_flasks_to_item_pool else min(opt.flasks_per_act.value * (act - 1), MAX_FLASK_SLOTS if opt.add_flasks_to_item_pool.value else 0)
 
 def get_gem_amount_for_act(act, opt):
-    return 0 if not opt.add_max_links_to_item_pool else min(opt.max_links_per_act.value * (act - 1), MAX_LINK_UPGRADES)
+    return 0 if not opt.add_max_links_to_item_pool else min(opt.max_links_per_act.value * (act - 1), MAX_LINK_UPGRADES if opt.add_max_links_to_item_pool.value else 0)
 
 def get_skill_gem_amount_for_act(act, opt):
-    return min(opt.skill_gems_per_act.value * (act - 1), MAX_SKILL_GEMS)
+    return min(opt.skill_gems_per_act.value * (act - 1), MAX_SKILL_GEMS if opt.add_skill_gems_to_item_pool.value else 0)
 
 def get_support_gem_amount_for_act(act, opt):
-    return min(opt.support_gems_per_act.value * (act - 1), MAX_SUPPORT_GEMS)
+    return min(opt.support_gems_per_act.value * (act - 1), MAX_SUPPORT_GEMS if opt.add_support_gems_to_item_pool.value else 0)
 
 def get_passives_amount_for_act(act, opt):
     return passives_required_for_act.get(act, 0) if opt.add_passive_skill_points_to_item_pool.value else 0
@@ -85,7 +85,7 @@ def completion_condition(world: "PathOfExileWorld",  state: CollectionState) -> 
     else: # reach act for goal
         return can_reach(world.goal_act, world, state)
 
-def can_reach(act: int, world, state: CollectionState) -> bool:
+def can_reach(act: int, world: "PathOfExileWorld", state: CollectionState) -> bool:
     opt : PathOfExileOptions = world.options
 
     if opt.disable_generation_logic.value:
@@ -173,11 +173,12 @@ def can_reach(act: int, world, state: CollectionState) -> bool:
         if _debug:
             log = f"Act {act} not reachable with:"
             if gear_count < gear_amount:
-                log += f"gear: {gear_count}/{gear_amount},"
+                log += f"gear: {gear_count}/{gear_amount} (total: {len(Items.get_gear_items(world.items_to_place))}),"
             if flask_count < flask_amount:
                 log += f" flask: {flask_count}/{flask_amount},"
             if gem_slot_count < gem_slot_amount:
-                log += f" gem slots: {gem_slot_count}/{gem_slot_amount},"
+                amount = Items.get_max_links_items(world.items_to_place)
+                log += f" gem slots: {gem_slot_count}/{gem_slot_amount}, full_amount: {amount}"
             if support_gem_count < support_gem_amount:
                 log += f" support gems: {support_gem_count}/{support_gem_amount},"
             if usable_skill_gem_count < skill_gem_amount:
