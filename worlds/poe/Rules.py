@@ -51,10 +51,10 @@ def get_gear_amount_for_act(act, world: "PathOfExileWorld"):
     return min(world.options.gear_upgrades_per_act.value * (act - 1), world.placed_total_gear_upgrades)
 
 def get_flask_amount_for_act(act, world: "PathOfExileWorld"):
-    return 0 if not world.options.add_flasks_to_item_pool else min(world.options.flasks_per_act.value * (act - 1), world.placed_total_flask_slots if world.options.add_flasks_to_item_pool.value else 0)
+    return 0 if not world.options.add_flasks_to_item_pool else min(world.options.flasks_per_act.value * (act), world.placed_total_flask_slots if world.options.add_flasks_to_item_pool.value else 0)
 
 def get_gem_link_amount_for_act(act, world: "PathOfExileWorld"):
-    return 0 if not world.options.add_max_links_to_item_pool else min(world.options.max_links_per_act.value * (act - 1), world.placed_total_link_upgrades if world.options.add_max_links_to_item_pool.value else 0)
+    return 0 if not world.options.add_max_links_to_item_pool else min(world.options.max_links_per_act.value * (act), world.placed_total_link_upgrades if world.options.add_max_links_to_item_pool.value else 0)
 
 def get_skill_gem_amount_for_act(act, world: "PathOfExileWorld"):
     return min(world.options.skill_gems_per_act.value * (act - 1), world.placed_total_skill_gems if world.options.add_skill_gems_to_item_pool.value else 0)
@@ -204,7 +204,7 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
     opt:PathOfExileOptions = world.options
 
     total_available_locations: list[LocationDict] = list()
-    selected_locations_result: list[LocationDict] = list()
+    priority_selected_locations: list[LocationDict] = list()
     goal_act = world.goal_act
 
     max_level = acts[goal_act]["maxMonsterLevel"]
@@ -218,25 +218,39 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
         lvl_locs = [loc for loc in level_locations.values() if loc["level"] is not None and loc["level"] <= max_level]
         total_available_locations.extend(lvl_locs)
 
-    def total_needed_by_act(act_target: int) -> int:
+    def total_needed_by_end_of_act(act_target: int) -> int:
+        needed_locations = 0
+        start_required = Items.ACT_0_USABLE_GEMS + Items.ACT_0_WEAPON_TYPES + Items.ACT_0_ARMOUR_TYPES + Items.ACT_0_FLASK_SLOTS + Items.ACT_0_ADDITIONAL_LOCATIONS
+
         if act_target < 1:
             return 0
-        needed_locations = 0
-        needed_locations += Items.ACT_0_USABLE_GEMS + Items.ACT_0_WEAPON_TYPES + Items.ACT_0_ARMOUR_TYPES + Items.ACT_0_FLASK_SLOTS + Items.ACT_0_ADDITIONAL_LOCATIONS
-        if act_target >= 1:
-            needed_locations += 5 # padding
-
+        needed_locations += start_required
         needed_locations += get_ascendancy_amount_for_act(act_target, world)
         needed_locations += get_gear_amount_for_act(act_target, world)
         needed_locations += get_flask_amount_for_act(act_target, world)
         needed_locations += get_gem_link_amount_for_act(act_target, world)
         needed_locations += get_skill_gem_amount_for_act(act_target, world)
         needed_locations += get_passives_amount_for_act(act_target, world)
+        if _very_debug:
+            logger.debug(f"\n start_required {act_target}: {start_required}"
+                         f"\n get_ascendancy_amount_for_act {act_target}: {get_ascendancy_amount_for_act(act_target, world)}"
+                         f"\n get_gear_amount_for_act {act_target}: {get_gear_amount_for_act(act_target, world)}"
+                         f"\n get_flask_amount_for_act {act_target}: {get_flask_amount_for_act(act_target, world)}"
+                         f"\n get_gem_link_amount_for_act {act_target}: {get_gem_link_amount_for_act(act_target, world)}"
+                         f"\n get_skill_gem_amount_for_act {act_target}: {get_skill_gem_amount_for_act(act_target, world)}"
+                         f"\n get_passives_amount_for_act {act_target}: {get_passives_amount_for_act(act_target, world)}"
+                         f"\n total needed by act {act_target}: {needed_locations}"
+                         f"\n"
+                         )
         return needed_locations
 
+    guaranteed_early_locations = [loc for loc in total_available_locations if loc["act"] == 1 and loc.get("placeInAct", None) == "early"] # early act 1 locations are guaranteed to be available
+    for loc in guaranteed_early_locations:
+        total_available_locations.remove(loc)
+    priority_selected_locations.extend(guaranteed_early_locations)
 
     for act in range(1, goal_act + 1):
-        needed_locations_for_act = total_needed_by_act(act) - total_needed_by_act(act - 1)
+        needed_locations_for_act = total_needed_by_end_of_act(act) - total_needed_by_end_of_act(act - 1)
         locations_in_act = [loc for loc in total_available_locations if loc["act"] == act]
     
         if not locations_in_act:
@@ -246,13 +260,17 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
             logger.error(f"\n@@@@@@@@@@\n[ERROR] Not enough locations for Act {act}. Needed: {needed_locations_for_act}, Available: {len(locations_in_act)}, going to try to generate anyway...")
 
         selected_locations = world.random.sample(locations_in_act, k=min(needed_locations_for_act, len(locations_in_act)))
+        if _very_debug:
+            logger.debug(f"Selecting {len(selected_locations)}/{needed_locations_for_act} locations for Act {act}, from {len(locations_in_act)} available locations")
+            for loc in selected_locations:
+                logger.debug(f"  - {loc['name']}")
         for loc in selected_locations:
             total_available_locations.remove(loc)
-        selected_locations_result.extend(selected_locations)
+        priority_selected_locations.extend(selected_locations)
 
     world.random.shuffle(total_available_locations)
-    selected_locations_result.extend(total_available_locations)
-    return selected_locations_result[:target_amount]
+    priority_selected_locations.extend(total_available_locations)
+    return priority_selected_locations[:target_amount]
 
 
 

@@ -33,6 +33,7 @@ def get_location_id_from_item_name(item_name: str) -> int | None:
 
 class LocationDict(TypedDict, total=False):
     baseItem: str|None
+    placeInAct: str|None
     dropLevel: int|None
     level: int|None
     name: str
