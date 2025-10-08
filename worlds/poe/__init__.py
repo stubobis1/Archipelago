@@ -181,19 +181,19 @@ class PathOfExileWorld(World):
         table_total_item_count = sum(item.get("count", 1) for item in Items.item_table.values())
         if len(self.locations_to_place) <  self.total_items_to_place_count:
             logger.debug(
-                f"[Debug]: Not enough locations to place all items! locations: {len(self.locations_to_place)} < items: {table_total_item_count}\nCulling...")
+                f"[POE]: Not enough locations to place all items! locations: {len(self.locations_to_place)} < items: {table_total_item_count}\nCulling...")
             self.total_items_to_place_count = sum(item.get("count", 1) for item in self.items_to_place.values())
             logger.debug(
-                f"[DEBUG]: total items to place before culling: {self.total_items_to_place_count} / {table_total_item_count} possible")
+                f"[POE]: total items to place before culling: {self.total_items_to_place_count} / {table_total_item_count} possible")
             self.items_to_place = Items.cull_items_to_place(self, self.items_to_place, self.locations_to_place)
             self.total_items_to_place_count = sum(item.get("count", 1) for item in self.items_to_place.values())
             logger.debug(
-                f"[DEBUG]: total items to place after  culling: {self.total_items_to_place_count} / {table_total_item_count} possible")
+                f"[POE]: total items to place after  culling: {self.total_items_to_place_count} / {table_total_item_count} possible")
 
 
         table_total_item_count = sum(item.get("count", 1) for item in Items.item_table.values())
-        logger.debug(f"[DEBUG]: total items to place: {self.total_items_to_place_count} / {table_total_item_count} possible")
-        logger.debug(f"[DEBUG]: total locs in world.: {len(self.locations_to_place)} / {len(Locations.full_locations)} possible")
+        logger.debug(f"[POE]: total items to place: {self.total_items_to_place_count} / {table_total_item_count} possible")
+        logger.debug(f"[POE]: total locs in world.: {len(self.locations_to_place)} / {len(Locations.full_locations)} possible")
 
 
     def create_regions(self):
@@ -228,7 +228,7 @@ class PathOfExileWorld(World):
             for item in list_of_items:
                 self.multiworld.itempool.append(item)
 
-        logger.debug(f"[DEBUG]: items left to place:{len(self.items_to_place)} /{self.total_items_to_place_count}.\nCreated {len(self.locations_to_place)} locations.")
+        logger.debug(f"[POE]: items left to place:{len(self.items_to_place)} /{self.total_items_to_place_count}.\nCreated {len(self.locations_to_place)} locations.")
 
     def create_item(self, item_name: str) -> Items.PathOfExileItem:
         # this is called when AP wants to create an item by name (for plando, start inventory, item links) or when you call it from your own code
