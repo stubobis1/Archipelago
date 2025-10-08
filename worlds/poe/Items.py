@@ -96,7 +96,7 @@ def deprioritize_non_logic_gear(world: "PathOfExileWorld", table: Dict[int, Item
     opt: PathOfExileOptions = world.options
 
     # If gear upgrades are disabled, don't try to deprioritize any gear, flask are already progressive.
-    if opt.gear_upgrades.value == opt.gear_upgrades.option_no_gear_unlocked:
+    if opt.gear_upgrades.value == opt.gear_upgrades.option_all_gear_unlocked_at_start:
         return table
 
     required_categories = list()

@@ -167,7 +167,7 @@ class PathOfExileWorld(World):
         setup_early_items(self)
 
         self.items_to_place = Items.deprioritize_non_logic_gems(self, self.items_to_place)
-        self.items_to_place = Items.deprioritize_non_logic_gear(self, self.items_to_place)
+        # self.items_to_place = Items.deprioritize_non_logic_gear(self, self.items_to_place) # this can lead to some generation issues, so not doing it for now.
 
         self.total_items_to_place_count = sum(item.get("count", 1) for item in self.items_to_place.values())
         self.locations_to_place = poeRules.SelectLocationsToAdd(world=self, target_amount=self.total_items_to_place_count)
