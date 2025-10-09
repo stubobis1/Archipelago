@@ -92,7 +92,7 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
         return
     received_item_ids = [item.item for item in ctx.items_received]
     
-    if "!help" in message or "!commands" in message:
+    if any(cmd in message for cmd in ("!help", "!commands", "!cmds")):
             help_message = """!ap char - Set your character | !deathlink | !goal | !passive or !p | !usable skill gems - by level | !usable support gems | !usable utility gems | !usable gems | !main gems | !support gems | !utility gems | !all gems or !gems | !gear | !weapons | !armor | !links | !flasks | !ascendancy | !help | Note: use @yourname followed a command."""
             await split_send_message(ctx, help_message)
             
@@ -115,7 +115,7 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
         gems.sort(key=lambda x: x.get("requiredLevel", 0))  # Sort by required level
         await split_send_message(ctx,', '.join(gem['name'] for gem in gems))
         
-    if "!all gems" in message or "!gems" in message:
+    if any(cmd in message for cmd in ("!gems", "!all gems")):
         # Get all gem items in item_ids
         gems = [item for item in Items.get_all_gems() if item["id"] in received_item_ids] + [i for i in Items.get_by_category("GemModifier") if i["id"] in received_item_ids]
         gems.sort(key=lambda x: x.get("requiredLevel", 0))  # Sort by required level
@@ -146,11 +146,13 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
         await split_send_message(ctx,', '.join(gem['name'] for gem in usable_gems))
 
     if "!gear" in message:
-        # Get all gear items in item_ids
-        gear = [id for id in received_item_ids if id in Items.get_gear_items().values().id]
-        progressive_message = build_progressive_message(gear)
-        singles = ', '.join(gear['name'] for gear in gear if "Progressive" not in gear["category"])
-        await split_send_message(ctx, progressive_message + (', and ' + singles if singles else '' ))
+        await split_send_message(ctx, generate_equipment_message(received_item_ids, total_ids=[item["id"] for item in Items.get_gear_items()]))
+
+    if "!weapons" in message:
+        await split_send_message(ctx, generate_equipment_message(received_item_ids, total_ids=[item["id"] for item in Items.get_weapon_items()]))
+
+    if any(cmd in message for cmd in ("!armor", "!armour")):
+        await split_send_message(ctx, generate_equipment_message(received_item_ids, total_ids=[item["id"] for item in Items.get_armor_items()]))
 
     if "!links" in message:
         # Get all linked items in item_ids
@@ -171,7 +173,7 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
         
         await split_send_message(ctx, link_message)
 
-    if "!flasks" in message or "!flask" in message:
+    if any(cmd in message for cmd in ("!flasks", "!flask")):
         # Get all flask items in item_ids
         flask_counts: dict[str, int] = {}
         
@@ -190,26 +192,12 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
 
         await split_send_message(ctx, flask_message)
 
-    if "!ascendancy" in message:
+    if any(cmd in message for cmd in ("!ascendancy", "!ascendancies", "!classes", "!class")):
         # Get all ascendancy items in item_ids
         ascendancy = [item for item in Items.get_ascendancy_items() if item["id"] in received_item_ids]
         await split_send_message(ctx,', '.join(ascendancy['name'] for ascendancy in ascendancy))
 
-    if "!weapons" in message:
-        # Get all weapon items in item_ids
-        weapons = [item for item in Items.get_weapon_items() if item["id"] in received_item_ids]
-        progressive_message = build_progressive_message(weapons)
-        singles = ', '.join(weapons['name'] for weapons in weapons if "Progressive" not in weapons["category"])
-        await split_send_message(ctx, progressive_message + (', and ' + singles if singles else '' ))
-
-    if "!armor" in message:
-        # Get all armor items in item_ids
-        armor = [item for item in Items.get_armor_items() if item["id"] in received_item_ids]
-        progressive_message = build_progressive_message(armor)
-        singles = ', '.join(armor['name'] for armor in armor if "Progressive" not in armor["category"])
-        await split_send_message(ctx, progressive_message + (', and ' + singles if singles else '' ))
-
-    if "!passive" in message or "!p" in message:
+    if any(cmd in message for cmd in ("!p", "!passive", "!passives")):
         message = f"You have {ctx.passives_available - ctx.passives_used} passive skill points available. ( {ctx.passives_used} / {ctx.passives_available} total for character {ctx.character_name} )"
         await split_send_message(ctx, message)
     
@@ -222,15 +210,34 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
     if "!goal" in message:
         await send_goal_message(ctx)
 
-def build_progressive_message(items: list["ItemDict"]) -> str:
-    progressive_count: dict[str, int] = {}
+
+def generate_equipment_message(received_item_ids, total_ids=None) -> str:
+    received_gear_ids = [item_id for item_id in received_item_ids if item_id in total_ids]
+    received_gear_items = [item for item in Items.get_gear_items() if item["id"] in received_gear_ids]
+    progressive_message = build_progressive_message(received_gear_ids, received_gear_items)
+    singles_message = build_singles_message(received_gear_ids, received_gear_items)
+    return_message = ""
+    if progressive_message and singles_message:
+        return_message = ", and also: ".join([progressive_message, singles_message])
+    else:
+        return_message = progressive_message + singles_message
+    return return_message
+
+def build_progressive_message(items_ids: list[int], items: list[Items.ItemDict]) -> str:
+    item_count: dict[str, int] = {}
     progressive_message = ""
-    for item in items:
-        if "Progressive" in item["category"]:
-            progressive_count[item["name"]] = progressive_count.get(item["name"], 0) + 1
-    for name, count in progressive_count.items():
+    progressive_items = [item for item in items if "Progressive" in item["category"]]
+    for item_id in items_ids:
+        for item in progressive_items:
+            if item["id"] == item_id:
+                item_count[item["name"]] = item_count.get(item["name"], 0) + 1
+    for name, count in item_count.items():
         progressive_message += f"{rarity_from_progressive_count(count)} {name.replace("Progressive ", "")}, "
     return progressive_message.rstrip(", ")
+
+def build_singles_message(item_ids: list[int], items: list[Items.ItemDict]) -> str:
+    return ', '.join(item['name'] for item in items if "Progressive" not in item["category"] and item['id'] in item_ids)
+
 
 def rarity_from_progressive_count(count: int) -> str:
     if count == 1:

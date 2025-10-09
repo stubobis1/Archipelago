@@ -146,7 +146,7 @@ class GearUpgrades(Choice):
     option_all_normal_gear_unlocked = 2
     option_all_uniques_unlocked = 3
     option_no_gear_unlocked = 4
-    default = 2
+    default = 4
 
 class GearUpgradesPerAct(Range):
     """
