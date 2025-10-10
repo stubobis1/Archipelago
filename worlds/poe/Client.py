@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import traceback
 import typing
 from random import Random
@@ -12,6 +13,7 @@ import Utils
 from CommonClient import ClientCommandProcessor, CommonContext, server_loop, gui_enabled
 from pathlib import Path
 
+from NetUtils import NetworkItem
 from .poeClient.fileHelper import load_settings, save_settings, find_possible_client_txt_path
 from .poeClient import main as poe_main
 from .poeClient import gggAPI
@@ -136,6 +138,38 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
         tts.generate_tts_tasks_from_missing_locations(self.ctx)
         tts.run_tts_tasks()
         return True
+
+    def _cmd_whisper_updates(self, enable: bool | str | None = None) -> bool:
+        """Enable or disable whispering item updates to the in game chat."""
+        if enable is None:
+            whisper_enabled_implied = not self.ctx.game_options.get("whisper_updates", False)
+            self.output(f"Turning whisper updates {'on' if whisper_enabled_implied else 'off'}")
+            enable = whisper_enabled_implied
+        if isinstance(enable, str):
+            lowered = enable.lower()
+            if lowered in {"true", "1", "yes", "y", "on"}:
+                enable_bool = True
+            elif lowered in {"false", "0", "no", "n", "off"}:
+                enable_bool = False
+            else:
+                self.output("ERROR: Please provide a valid boolean value for enabling whisper updates (True/False).")
+                return False
+        elif isinstance(enable, bool):
+            enable_bool = enable
+        else:
+            self.output("ERROR: Please provide a valid boolean value for enabling whisper updates (True/False).")
+            return False
+
+        self.ctx.game_options["whisper_updates"] = enable_bool
+        self.ctx.whisper_updates_enabled = enable_bool
+        self.ctx.update_settings()
+
+        if enable_bool:
+            self.output("Whisper updates enabled.")
+        else:
+            self.output("Whisper updates disabled.")
+        return True
+
 
     def _cmd_poe_auth(self) -> bool:        
         """Authenticate with Path of Exile's OAuth2 service."""
@@ -304,6 +338,9 @@ class FilterOptions:
     #    sfx_enabled: bool = True  # Whether to play random sound effects for item pickups (trap)
     
 class PathOfExileContext(CommonContext):
+    # THESE ARE ALL STATIC.
+    # but I guess that's ok, because we only have one client per game.
+
     game = "Path of Exile"
     command_processor = PathOfExileCommandProcessor
     items_handling = 0b111
@@ -315,11 +352,14 @@ class PathOfExileContext(CommonContext):
     passives_used: int = 0
     passives_available: int = 0
 
+    last_received_item_ids: list[NetworkItem] = []
     character_name: str = ""
     client_text_path: Path = ""
     base_item_filter: str = ""
     poe_doc_path: str = ""
     generated_version: str = ""
+    whisper_updates_enabled: bool = True
+    whisper_updates_to_send: list[str] = []
     slot_data = {}
     game_options = {}
     client_options = {}
@@ -354,6 +394,7 @@ class PathOfExileContext(CommonContext):
         super().on_package(cmd, args)
 
         if cmd == 'Connected':
+            self.last_received_item_ids = [item.item for item in self.items_received]
             self.slot_data = args.get('slot_data', {})
             self.game_options = self.slot_data.get('game_options', {})
             self.client_options = self.slot_data.get('client_options', {})
@@ -427,6 +468,15 @@ class PathOfExileContext(CommonContext):
 
             # self.command_processor.output(self=self, text=f"[color=green]{msg}[/color]") #TODO: color in GUI
 
+        if cmd == 'ReceivedItems':
+            received_ids = [item.item for item in self.items_received]
+            new_items: list[str] = []
+            for network_item in self.items_received:
+                # Newly-obtained items
+                if not network_item.item in self.last_received_item_ids:
+                    new_items.append(str(self.item_names.lookup_in_game(network_item.item)))
+            self.whisper_updates_to_send.append("You have received items! " + ", ".join(new_items))
+            self.last_received_item_ids = received_ids
 
     def update_settings(self):
         """Update a setting and save it to the settings file."""

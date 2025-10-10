@@ -74,7 +74,7 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
     char_name, message = get_char_name_and_message_from_line(line)
     message = message.lower()
 
-    if any(cmd in message for cmd in ("!ap char", "!ap character", "!ap setchar", "!ap setcharacter", "!ap_char")):
+    if any(cmd in message for cmd in ("!ap char", "!ap character", "!ap setchar", "!ap setcharacter", "!ap_char", "!apchar")):
         _random_string = random.randbytes(8).hex()
         await inputHelper.send_poe_text(f"char_{_random_string}") # don't know the char name yet, so we can't whisper.
     if "char_" in message:
@@ -206,6 +206,11 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
         deathlinked = ctx.get_is_death_linked()
         await ctx.update_death_link(not deathlinked)
         await split_send_message(ctx, f"Deathlink {"enabled" if not deathlinked else "disabled"}.")
+
+    if any (cmd in message for cmd in ("!whisper updates", "!whisper update", "!updates", "!update")):
+        ctx.whisper_updates_enabled = not ctx.whisper_updates_enabled
+        await split_send_message(ctx, f"Whisper updates are {"enabled" if not ctx.whisper_updates_enabled else "disabled"}.")
+        await ctx.update_settings()
         
     if "!goal" in message:
         await send_goal_message(ctx)

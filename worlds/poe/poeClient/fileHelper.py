@@ -274,7 +274,8 @@ async def save_settings(ctx: "PathOfExileContext", path: Path = settings_file_pa
             "client_txt": str(ctx.client_text_path),
             "last_char": str(ctx.character_name),
             "base_item_filter": str(ctx.base_item_filter),
-            "poe_doc_path": str(ctx.poe_doc_path)
+            "poe_doc_path": str(ctx.poe_doc_path),
+            "whisper_updates": str(ctx.whisper_updates_enabled)
         }
 
         # Add/update the world entry in existing settings
@@ -317,6 +318,7 @@ async def load_settings(ctx: "PathOfExileContext", path: Path = settings_file_pa
                                              default_settings.get("client_txt", find_possible_client_txt_path())),
             "last_char": world_settings.get("last_char", default_settings.get("last_char")),
             "base_item_filter": world_settings.get("base_item_filter", default_settings.get("base_item_filter")),
+            "whisper_updates": world_settings.get("whisper_updates", default_settings.get("whisper_updates", None)),
         }
 
         return loaded_data

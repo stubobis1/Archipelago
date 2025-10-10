@@ -25,7 +25,6 @@ from pathlib import Path
 logger = logging.getLogger("poeClient.main")
 _debug = True  # Set to True for debug output, False for production
 validate_char_debounce_time = 2  # seconds
-loop_timer = 0.1  # Time in seconds to wait before reloading the item filter
 context = None  # This will be set in the client_start function
 _run_update_item_filter = False
 _last_pressed_key: keyboard.Key | None = None
@@ -125,10 +124,11 @@ async def async_load(ctx: "PathOfExileContext" = None):
     await inputHelper.important_send_poe_text(f"/itemfilter {itemFilter.AP_FILTER_NAME}")
 
 
-
-async def timer_loop():
+sending_text_in_progress = False
+async def timer_loop(ctx: "PathOfExileContext" = None):
+    loop_timer = 0.1  # Time in seconds to wait before polling
     ticks = 0.1
-    global _run_update_item_filter, _last_pressed_key
+    global _run_update_item_filter, _last_pressed_key, sending_text_in_progress
     try:
         while True:
             await asyncio.sleep(loop_timer)
@@ -143,6 +143,15 @@ async def timer_loop():
                     logger.error(f"[ERROR] Error executing function for key {_last_pressed_key}: {e}")
                     raise e
                 _last_pressed_key = None
+            if len(ctx.whisper_updates_to_send) >= 1 and ticks % 1 < 0.1:
+                if ctx.whisper_updates_enabled and not sending_text_in_progress:
+                    sending_text_in_progress = True
+                    await asyncio.sleep(3)  # small delay to allow more messages to accumulate
+                    await inputHelper.send_multiple_poe_text(ctx.whisper_updates_to_send, retry_times=3, retry_delay=2)
+                    ctx.whisper_updates_to_send.clear()
+                    sending_text_in_progress = False
+                elif not ctx.whisper_updates_enabled: # clear the list if whispering is disabled
+                    ctx.whisper_updates_to_send.clear()
 
 
     except asyncio.CancelledError:
@@ -198,7 +207,7 @@ async def main_async(context: "PathOfExileContext"):
         
         tasks = [
             asyncio.create_task(fileHelper.callback_on_file_change(path_to_client_txt, [enter_new_zone_callback, chat_commands]), name="file_watcher"),
-            asyncio.create_task(timer_loop(), name="timer_loop")
+            asyncio.create_task(timer_loop(context), name="timer_loop")
         ]
         
         await asyncio.gather(*tasks)
