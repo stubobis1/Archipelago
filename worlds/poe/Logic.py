@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
     from worlds.poe.Options import PathOfExileOptions
 
 logger = logging.getLogger("poe.logic")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 def generate_items_logic(world: "PathOfExileWorld"):
 
@@ -299,7 +299,7 @@ def setup_character_items(world: "PathOfExileWorld"):
     if world.goal_act >= 3:
         for char_class in char_classes:
             sample_size = max(min(1 if char_class == "Scion" else 3, options.ascendancies_available_per_class.value), 0)
-            logger.info(
+            logger.debug(
                 f"{sample_size} Adding ascendancy items for {char_class}. "
                 f"There are {len(Items.get_ascendancy_class_items(char_class, table=world.items_to_place))} items available.")
             items: list[Items.ItemDict] = world.random.sample(

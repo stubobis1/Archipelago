@@ -18,7 +18,7 @@ from . import Logic
 from .Version import POE_VERSION
 
 logger = logging.getLogger("poe")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # ----- Configure the POE client ----- #
 
@@ -166,8 +166,8 @@ class PathOfExileWorld(World):
         self.multiworld.completion_condition[self.player] = lambda state: (poeRules.completion_condition(self, state))
 
 
-        logger.debug(f"[CreateRegion]: total items to place: {self.total_items_to_place_count}")
-        logger.debug(f"[CreateRegion]: total locs in world.: {len(self.locations_to_place)}")
+        logger.debug(f"[poe.CreateRegion]: total items to place: {self.total_items_to_place_count}")
+        logger.debug(f"[poe.CreateRegion]: total locs in world.: {len(self.locations_to_place)}")
 
     def create_item(self, item_name: str) -> Items.PathOfExileItem:
         # this is called when AP wants to create an item by name (for plando, start inventory, item links) or when you call it from your own code
