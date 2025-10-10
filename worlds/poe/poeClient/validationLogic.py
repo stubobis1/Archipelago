@@ -52,7 +52,7 @@ async def when_enter_new_zone(ctx: "PathOfExileContext", line: str):
     if ctx.character_name is None or ctx.character_name == "":
         logger.info("Character name is not set, cannot validate.")
         ctx.text_to_send.append((f"/itemfilter {itemFilter.INVALID_FILTER_NAME}", False))
-        ctx.text_to_send.append(("Character name is not set, cannot validate.", True))
+        ctx.text_to_send.append(("@_archipelago Character name is not set, cannot validate.", False))
         #await asyncio.wait_for(send_multiple_poe_text([f"/itemfilter {itemFilter.INVALID_FILTER_NAME}", "Character name is not set, cannot validate."]), TIMEOUT)
         return
     try:

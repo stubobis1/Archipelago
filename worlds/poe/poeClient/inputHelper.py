@@ -24,7 +24,7 @@ logger = logging.getLogger("poeClient")
 keyboard_controller = Controller()
 _debug = True
 _last_called = None
-_debounce_time = 1  # seconds
+DEBOUNCE_TIME = 1  # seconds
 _send_lock = asyncio.Lock()  # Add asyncio lock
 
 GAME_WINDOW_TITLE = "Path of Exile"
@@ -82,7 +82,7 @@ async def send_multiple_poe_text(commands: list[str], retry_times: int = 1, retr
     # if windows is active
     now = time.monotonic()
     async with _send_lock:  # Acquire lock before any operations
-        if window is not None and window.title == GAME_WINDOW_TITLE and not (_last_called is not None and now - _last_called < _debounce_time):
+        if window is not None and window.title == GAME_WINDOW_TITLE and not (_last_called is not None and now - _last_called < DEBOUNCE_TIME):
 
             logger.debug("Found active Path of Exile window")
 
@@ -119,8 +119,8 @@ async def send_multiple_poe_text(commands: list[str], retry_times: int = 1, retr
         if _debug:
             logger.info(f"Path of Exile window not active, retrying {retry_times} times with {retry_delay} seconds delay")
         delay = retry_delay
-        if _last_called is not None and now - _last_called < _debounce_time:
-            delay += _debounce_time - (now - _last_called)
+        if _last_called is not None and now - _last_called < DEBOUNCE_TIME:
+            delay += DEBOUNCE_TIME - (now - _last_called)
             if _debug:
                 logger.info(f"Debounced: Waiting {delay} seconds before retrying")
         await asyncio.sleep(delay)

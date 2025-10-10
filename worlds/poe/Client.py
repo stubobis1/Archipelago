@@ -359,7 +359,7 @@ class PathOfExileContext(CommonContext):
     poe_doc_path: str = ""
     generated_version: str = ""
     whisper_updates_enabled: bool = True
-    text_to_send: list[(str, bool)] = [] # list of text messages to send to in-game chat, bool is whether it is a whisper or not
+    text_to_send: list[tuple[str, bool]] = [] # list of (message, prepend_char_name) tuples to send to in-game chat
     slot_data = {}
     game_options = {}
     client_options = {}
@@ -440,6 +440,8 @@ class PathOfExileContext(CommonContext):
                         self.character_name = settings.get("last_char", self.character_name)
                         self.base_item_filter = settings.get("base_item_filter", self.base_item_filter)
                         self.poe_doc_path = settings.get("poe_doc_path", self.poe_doc_path)
+                        self.whisper_updates_enabled = settings.get("whisper_updates", False)
+                        self.last_received_item_ids = settings.get("already_received_items", [])
                         logger.debug(f"[DEBUG] Loaded settings: {settings}")
                     if self.poe_doc_path:
                         itemFilter.set_poe_doc_path(self.poe_doc_path)
@@ -477,6 +479,7 @@ class PathOfExileContext(CommonContext):
             if self.whisper_updates_enabled:
                 self.text_to_send.append(("You received new items! " + ", ".join(new_items), True))
             self.last_received_item_ids = received_ids
+            self.update_settings()
 
     def update_settings(self):
         """Update a setting and save it to the settings file."""
