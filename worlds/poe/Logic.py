@@ -7,6 +7,7 @@ import logging
 
 from .Options import PathOfExileOptions
 from . import Items
+from .data import ItemTable
 from . import Locations
 from . import Regions as poeRegions
 from . import Rules as poeRules
@@ -22,7 +23,7 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger("poe.logic")
 logger.setLevel(logging.DEBUG)
 
-def generate_items_logic(world: PathOfExileWorld):
+def generate_items_logic(world: "PathOfExileWorld"):
 
        # # Clear performance cache for fresh generation
        # from . import Rules as poeRules
@@ -73,7 +74,7 @@ def generate_items_logic(world: PathOfExileWorld):
 
 
 
-def setup_early_items(world: PathOfExileWorld):
+def setup_early_items(world: "PathOfExileWorld"):
     options: PathOfExileOptions = world.options
     setup_character_items(world)
     max_level = Locations.acts[world.goal_act]["maxMonsterLevel"]
@@ -199,7 +200,7 @@ def cleanup_gear_based_on_progressive_option(options, world):
     return None
 
 
-def setup_character_items(world: PathOfExileWorld):
+def setup_character_items(world: "PathOfExileWorld"):
     options: PathOfExileOptions = world.options
 
     def handle_starting_character(char):
@@ -298,7 +299,7 @@ def setup_character_items(world: PathOfExileWorld):
     if world.goal_act >= 3:
         for char_class in char_classes:
             sample_size = max(min(1 if char_class == "Scion" else 3, options.ascendancies_available_per_class.value), 0)
-            logger.debug(
+            logger.info(
                 f"{sample_size} Adding ascendancy items for {char_class}. "
                 f"There are {len(Items.get_ascendancy_class_items(char_class, table=world.items_to_place))} items available.")
             items: list[Items.ItemDict] = world.random.sample(

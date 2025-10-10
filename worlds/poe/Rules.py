@@ -13,8 +13,8 @@ logger.setLevel(logging.DEBUG)
 
 
 
-_debug = False
-_very_debug = False
+_debug = True
+_very_debug = True
 if Items.ACT_0_USABLE_GEMS + Items.ACT_0_WEAPON_TYPES + Items.ACT_0_ARMOUR_TYPES + Items.ACT_0_FLASK_SLOTS > 19:
     raise Exception("Act 0 requirements are too high, there are not enough locations in early act 1 to satisfy them")
 
@@ -249,7 +249,7 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
                          f"\n previous acts locations needed: {needed_for_previous_acts} "
                          f"\n total: {needed_locations + needed_for_previous_acts}"
                          )
-        return needed_locations + needed_for_previous_acts
+        return needed_locations - needed_for_previous_acts
 
     guaranteed_early_locations = [loc for loc in total_available_locations if loc["act"] == 1 and loc.get("placeInAct", None) == "early"] # early act 1 locations are guaranteed to be available
     for loc in guaranteed_early_locations:
@@ -257,7 +257,7 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
     priority_selected_locations.extend(guaranteed_early_locations)
 
     for act in range(1, goal_act + 1):
-        needed_locations_for_act = total_needed_by_end_of_act(act) - total_needed_by_end_of_act(act - 1)
+        needed_locations_for_act = total_needed_by_end_of_act(act)
         locations_in_act = [loc for loc in total_available_locations if loc["act"] == act]
     
         if not locations_in_act:
@@ -268,7 +268,8 @@ def SelectLocationsToAdd (world: "PathOfExileWorld", target_amount) -> list[Loca
         if needed_locations_for_act > len(locations_in_act):
             needed_earlier_locations = needed_locations_for_act - len(locations_in_act)
             locations_in_earlier_act = [loc for loc in total_available_locations if loc["act"] < act]
-            logger.debug(f"\n@@@@@@@@@@\nNot enough locations for Act {act}. Needed: {needed_locations_for_act}, Available: {len(locations_in_act)}, going to try and add earlier locations...")
+            if _debug:
+                logger.debug(f"\n@@@@@@@@@@\nNot enough locations for Act {act}. Needed: {needed_locations_for_act}, Available: {len(locations_in_act)}, going to try and add earlier locations...")
             if len(locations_in_earlier_act) < needed_earlier_locations:
                 logger.error(f"\n@@@@@@@@@@\n@@@@@@@@@@\nNot enough earlier locations to cover the deficit of {needed_earlier_locations}, only {len(locations_in_earlier_act)} available")
             chosen_earlier_locations = world.random.sample(locations_in_earlier_act, k=min(needed_earlier_locations, len(locations_in_earlier_act)))

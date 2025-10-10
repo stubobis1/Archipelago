@@ -148,6 +148,8 @@ class PathOfExileWorld(World):
         self.multiworld.push_precollected(item_obj)
     
     def generate_early(self):
+        Logic.generate_items_logic(self)
+
     def create_regions(self):
         """Create the regions for the Path of Exile world.
         This method initializes the regions based on the acts defined in Regions.py.
