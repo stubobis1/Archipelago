@@ -143,15 +143,14 @@ async def timer_loop(ctx: "PathOfExileContext" = None):
                     logger.error(f"[ERROR] Error executing function for key {_last_pressed_key}: {e}")
                     raise e
                 _last_pressed_key = None
-            if len(ctx.whisper_updates_to_send) >= 1 and ticks % 1 < 0.1:
+            if len(ctx.text_to_send) > 0:
                 if ctx.whisper_updates_enabled and not sending_text_in_progress:
                     sending_text_in_progress = True
-                    await asyncio.sleep(3)  # small delay to allow more messages to accumulate
-                    await inputHelper.send_multiple_poe_text(ctx.whisper_updates_to_send, retry_times=3, retry_delay=2)
-                    ctx.whisper_updates_to_send.clear()
+                    await inputHelper.send_multiple_poe_text(ctx.text_to_send, retry_times=3, retry_delay=2)
+                    ctx.text_to_send.clear()
                     sending_text_in_progress = False
                 elif not ctx.whisper_updates_enabled: # clear the list if whispering is disabled
-                    ctx.whisper_updates_to_send.clear()
+                    ctx.text_to_send.clear()
 
 
     except asyncio.CancelledError:

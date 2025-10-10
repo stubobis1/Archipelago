@@ -352,14 +352,14 @@ class PathOfExileContext(CommonContext):
     passives_used: int = 0
     passives_available: int = 0
 
-    last_received_item_ids: list[NetworkItem] = []
+    last_received_item_ids: list[int] = []
     character_name: str = ""
     client_text_path: Path = ""
     base_item_filter: str = ""
     poe_doc_path: str = ""
     generated_version: str = ""
     whisper_updates_enabled: bool = True
-    whisper_updates_to_send: list[str] = []
+    text_to_send: list[(str, bool)] = [] # list of text messages to send to in-game chat, bool is whether it is a whisper or not
     slot_data = {}
     game_options = {}
     client_options = {}
@@ -394,7 +394,6 @@ class PathOfExileContext(CommonContext):
         super().on_package(cmd, args)
 
         if cmd == 'Connected':
-            self.last_received_item_ids = [item.item for item in self.items_received]
             self.slot_data = args.get('slot_data', {})
             self.game_options = self.slot_data.get('game_options', {})
             self.client_options = self.slot_data.get('client_options', {})
@@ -469,13 +468,14 @@ class PathOfExileContext(CommonContext):
             # self.command_processor.output(self=self, text=f"[color=green]{msg}[/color]") #TODO: color in GUI
 
         if cmd == 'ReceivedItems':
-            received_ids = [item.item for item in self.items_received]
+            received_ids: list[int] = [item.item for item in self.items_received]
             new_items: list[str] = []
             for network_item in self.items_received:
                 # Newly-obtained items
                 if not network_item.item in self.last_received_item_ids:
                     new_items.append(str(self.item_names.lookup_in_game(network_item.item)))
-            self.whisper_updates_to_send.append("You have received items! " + ", ".join(new_items))
+            if self.whisper_updates_enabled:
+                self.text_to_send.append(("You received new items! " + ", ".join(new_items), True))
             self.last_received_item_ids = received_ids
 
     def update_settings(self):

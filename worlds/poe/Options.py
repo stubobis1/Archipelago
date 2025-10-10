@@ -99,7 +99,7 @@ class UsableStartingGear(Choice):
     option_starting_weapon_and_flask_slots = 2
     option_starting_weapon_and_gems = 3
     option_starting_weapon_flask_and_gems = 4
-    default = 3
+    default = 4
 
 class GucciHoboMode(Choice):
     """
@@ -142,10 +142,10 @@ class GearUpgrades(Choice):
     """
     display_name = "Gear Unlocks"
     option_all_gear_unlocked_at_start = 0
-    option_all_normal_and_unique_gear_unlocked = 1
-    option_all_normal_gear_unlocked = 2
-    option_all_uniques_unlocked = 3
-    option_no_gear_unlocked = 4
+    option_all_normal_and_unique_gear_unlocked_at_start = 1
+    option_all_normal_gear_unlocked_at_start = 2
+    option_all_uniques_unlocked_at_start = 3
+    option_no_gear_unlocked_at_start = 4
     default = 4
 
 class GearUpgradesPerAct(Range):
@@ -372,7 +372,7 @@ existing_char_preset_option = {
     "add_passive_skill_points_to_item_pool": True,
     "add_leveling_up_to_location_pool": False,
     "start_inventory": all_characters,
-    "gear_upgrades": GearUpgrades.option_no_gear_unlocked,
+    "gear_upgrades": GearUpgrades.option_no_gear_unlocked_at_start,
 }
 
 poe_presets = {
@@ -413,7 +413,7 @@ poe_presets = {
     "Impossible": {
         "number_of_bosses": 6,
         "bosses_available": ["uber_uber_elder", "uber_sirus", "uber_maven", "uber_exarch", "uber_eater", "uber_cortex"],
-        "gear_upgrades": GearUpgrades.option_no_gear_unlocked,
+        "gear_upgrades": GearUpgrades.option_no_gear_unlocked_at_start,
         "usable_starting_gear":UsableStartingGear.option_no_starting_gear,
         "add_passive_skill_points_to_item_pool": True,
         "add_leveling_up_to_location_pool": True,

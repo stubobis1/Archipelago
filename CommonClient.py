@@ -418,7 +418,7 @@ class CommonContext:
 
         self.locations_checked = set()  # local state
         self.locations_scouted = set()
-        self.items_received = []
+        self.items_received: list[NetworkItem] = []
         self.missing_locations = set()  # server state
         self.checked_locations = set()  # server state
         self.server_locations = set()  # all locations the server knows of, missing_location | checked_locations

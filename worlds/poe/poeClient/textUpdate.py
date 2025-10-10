@@ -311,19 +311,20 @@ async def send_goal_message(ctx):
     await split_send_message(ctx=ctx, message=goal_message)
 
 
-async def split_send_message(ctx, message: str, max_length: int = 500):
+async def split_send_message(ctx, message: str, max_length: int = 500, whisper_player: bool = True):
     """
     Splits a message into chunks and sends each chunk separately.
     """
     if not message:
         message = "None"
-    prefix = f"@{ctx.character_name} "
-    max_length = max_length - len(prefix)  # Adjust for character name prefix
+    prefix = ""
+    if whisper_player:
+        prefix = f"@{ctx.character_name} "
+        max_length = max_length - len(prefix)  # Adjust for character name prefix
     if len(message) <= max_length:
         await asyncio.wait_for(inputHelper.send_poe_text(prefix + message), SEND_MESSAGE_TIMEOUT)
         return
 
-    # Split the message into chunks, only at a comma
     chunks = [message[i:i + max_length] for i in range(0, len(message), max_length)]
     
     # Send each chunk
