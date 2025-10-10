@@ -13,8 +13,8 @@ logger.setLevel(logging.DEBUG)
 
 
 
-_debug = True
-_very_debug = True
+_debug = False
+_very_debug = False
 if Items.ACT_0_USABLE_GEMS + Items.ACT_0_WEAPON_TYPES + Items.ACT_0_ARMOUR_TYPES + Items.ACT_0_FLASK_SLOTS > 19:
     raise Exception("Act 0 requirements are too high, there are not enough locations in early act 1 to satisfy them")
 
