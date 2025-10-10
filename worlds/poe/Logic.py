@@ -117,15 +117,15 @@ def setup_early_items(world: "PathOfExileWorld"):
     for item_id in items_to_remove:
         world.items_to_place.pop(item_id)
     # TODO: handle progressive gear unlocked.
-    if options.gear_upgrades != options.gear_upgrades.option_no_gear_unlocked_at_start:
+    if options.gear_upgrades != options.gear_upgrades.option_no_gear_unlocked:
         categories = set()
         if options.gear_upgrades in {options.gear_upgrades.option_all_gear_unlocked_at_start,
-                                     options.gear_upgrades.option_all_normal_and_unique_gear_unlocked_at_start,
-                                     options.gear_upgrades.option_all_normal_gear_unlocked_at_start}:
+                                     options.gear_upgrades.option_all_normal_and_unique_gear_unlocked,
+                                     options.gear_upgrades.option_all_normal_gear_unlocked}:
             categories.add("Normal")
         if options.gear_upgrades in {options.gear_upgrades.option_all_gear_unlocked_at_start,
-                                     options.gear_upgrades.option_all_normal_and_unique_gear_unlocked_at_start,
-                                     options.gear_upgrades.option_all_uniques_unlocked_at_start}:
+                                     options.gear_upgrades.option_all_normal_and_unique_gear_unlocked,
+                                     options.gear_upgrades.option_all_uniques_unlocked}:
             categories.add("Unique")
         if options.gear_upgrades == options.gear_upgrades.option_all_gear_unlocked_at_start:
             categories.add("Magic")
