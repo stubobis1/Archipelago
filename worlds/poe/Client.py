@@ -313,7 +313,7 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
 def handle_task_errors(task: asyncio.Task, ctx: "PathOfExileContext", cmdprocessor: PathOfExileCommandProcessor):
     """Handle errors in the task."""
     try:
-        task.result()  # Will raise if the task failed
+         task.result()  # Will raise if the task failed
     except Exception as e:
         cmdprocessor.output(f"ERROR, the client borked: {e}")
 
