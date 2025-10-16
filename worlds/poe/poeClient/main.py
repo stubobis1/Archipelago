@@ -136,7 +136,8 @@ async def text_queue_processor(ctx: "PathOfExileContext"):
             if ctx.text_to_send: # [] is false
                 try:
                     message, prepend_char_name = ctx.text_to_send.pop(0)
-                    max_length = 500 - ((len(ctx.character_name) + 2) if prepend_char_name else 0)
+                    name = ctx.character_name if ctx.character_name else "_ap"
+                    max_length = 500 - ((len(name) + 2) if prepend_char_name else 0)
                     if len(message) > max_length:
                         # Split the message into chunks of max_length, and put them back in the queue
                         chunks = [message[i:i+max_length] for i in range(0, len(message), max_length)]
@@ -145,8 +146,8 @@ async def text_queue_processor(ctx: "PathOfExileContext"):
                         continue #
 
                     # Prepend character name if requested
-                    if prepend_char_name and ctx.character_name:
-                        message = f"@{ctx.character_name} {message}"
+                    if prepend_char_name:
+                        message = f"@{name} {message}"
                     await inputHelper.send_poe_text(message, retry_times=3, retry_delay=1)
                     await asyncio.sleep(inputHelper.DEBOUNCE_TIME + 0.001) 
                     
