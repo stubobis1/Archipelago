@@ -146,6 +146,16 @@
 {"category":["GemModifier"],"classification":1,"name":"Vaal Gems","id":138},
 {"category":["GemModifier"],"classification":1,"name":"Alternate Gems","id":139},
 
+{"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Conflagration","reqToUse":["Bow"],"id":584},
+{"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Thunderstorm","reqToUse":["Bow"],"id":585},
+{"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Somatic Shell","reqToUse":["Wand"],"id":586},
+{"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Kinetic Fusillade","reqToUse":["Wand"],"id":587},
+{"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Kinetic Rain","reqToUse":["Wand"],"id":588},
+{"category":["MainSkillGem"],"reqLevel":16,"classification":1,"name":"Wall of Force","reqToUse":["Wand"],"id":589},
+
+{"category":["MainSkillGem"],"reqLevel":31,"classification":2,"name":"Windburst Support","reqToUse":["Bow"],"id":590},
+{"category":["MainSkillGem"],"reqLevel":18,"classification":2,"name":"Living Lightning Support","id":591},
+
 {"category":["MainSkillGem"],"reqLevel": 4,"classification":1,"name":"Animate Weapon","id":140},
 {"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Artillery Ballista","reqToUse":["Bow"],"id":141},
 {"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Barrage","reqToUse":["Wand","Bow"],"id":142},

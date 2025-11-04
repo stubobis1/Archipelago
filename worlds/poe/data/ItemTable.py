@@ -4,6 +4,16 @@ import json
 from BaseClasses import ItemClassification
 
 # we can't really tell the difference between quivers and shields without this.
+# Maybe just regex "Quiver" or "Shield"|"Bundle"|"Buckler" in the name?
+
+# we are removing the base types Ring base types that can be found in Keepers of the Flame:
+# Cryonic Ring
+# Enthalpic Ring
+# Formless Ring
+# Fugitive Ring
+# Organic Ring
+# Synaptic Ring
+
 quiver_base_type_array = [
 "Serrated Arrow Quiver",
 "Fire Arrow Quiver",
