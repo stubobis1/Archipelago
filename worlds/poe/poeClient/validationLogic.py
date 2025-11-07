@@ -40,7 +40,7 @@ last_zone = None
 # Timeouts (seconds)
 TIMEOUT = 5.0
 async def when_enter_new_zone(ctx: "PathOfExileContext", line: str):
-    global last_zone, is_char_in_logic
+    global last_zone
     zone = textUpdate.get_zone_from_line(ctx, line)
     last_zone = zone
     if not zone:
@@ -50,8 +50,6 @@ async def when_enter_new_zone(ctx: "PathOfExileContext", line: str):
     char = None
     found_items_list: list[Locations.LocationDict] = []
     if ctx.character_name is None or ctx.character_name == "":
-        logger.info("Character name is not set, cannot validate.")
-        ctx.text_to_send.append((f"/itemfilter {itemFilter.INVALID_FILTER_NAME}", False))
         ctx.text_to_send.append(("Character name is not yet set! type `!ap char` to set your char.", True))
         #await asyncio.wait_for(send_multiple_poe_text([f"/itemfilter {itemFilter.INVALID_FILTER_NAME}", "Character name is not set, cannot validate."]), TIMEOUT)
         return
@@ -65,14 +63,15 @@ async def when_enter_new_zone(ctx: "PathOfExileContext", line: str):
         logger.error(f"Error fetching character {ctx.character_name}: {e}\nTraceback:\n{tb_str}")
         raise
 
-    logic_errors = await validate_and_update(ctx, char, found_items_list) # this updates the filter if needed.
+    logic_errors = await validate_and_update(ctx, char, found_items_list) # this also updates the filter if needed.
+    char_in_logic = True if len(logic_errors) == 0 else False
     victory_task = check_for_victory(ctx, zone, char)
 
     # THIS IS FOR DEBUGGING PURPOSES, I'm tired of respeccing my character to test the logic, lol
     if False:
-        is_char_in_logic = True
+        char_in_logic = True
 
-    if not is_char_in_logic:
+    if not char_in_logic:
         error_msg = ", and ".join(logic_errors) if logic_errors else "unknown errors"
         ctx.text_to_send.append((f"/itemfilter {itemFilter.INVALID_FILTER_NAME}", False))
         ctx.text_to_send.append((f"{INVALID_STATE_CHAT_ERROR_MESSAGE}: {error_msg}", True))

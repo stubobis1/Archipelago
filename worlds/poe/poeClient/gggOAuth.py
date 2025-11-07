@@ -65,7 +65,7 @@ async def async_oauth_login() -> dict:
                     if code:
                         self.send_response(200)
                         self.end_headers()
-                        self.wfile.write(b"<h1>Authorization successful! You can close this tab.</h1>")
+                        self.wfile.write(b"<h1>Authorization successful! You can close this tab and start playing Archipelago: Path of Exile!.</h1>") #TODO; this would be good to have a full HTML page
                         if not code_future.done():
                             code_future.set_result(code)
                         def shutdown_server(server):

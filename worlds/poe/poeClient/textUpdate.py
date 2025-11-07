@@ -220,8 +220,12 @@ async def chat_commands_callback(ctx: "PathOfExileContext", line: str):
 def generate_equipment_message(received_item_ids, total_ids=None) -> str:
     received_gear_ids = [item_id for item_id in received_item_ids if item_id in total_ids]
     received_gear_items = [item for item in Items.get_gear_items() if item["id"] in received_gear_ids]
+    
+    # Get all gear items that match the total_ids filter
+    all_gear_items = [item for item in Items.get_gear_items() if item["id"] in total_ids]
+    
     progressive_message = build_progressive_message(received_gear_ids, received_gear_items)
-    singles_message = build_singles_message(received_gear_ids, received_gear_items)
+    singles_message = build_singles_message(received_gear_ids, received_gear_items, all_gear_items)
     return_message = ""
     if progressive_message and singles_message:
         return_message = ", and also: ".join([progressive_message, singles_message])
@@ -241,8 +245,75 @@ def build_progressive_message(items_ids: list[int], items: list[Items.ItemDict])
         progressive_message += f"{rarity_from_progressive_count(count)} {name.replace("Progressive ", "")}, "
     return progressive_message.rstrip(", ")
 
-def build_singles_message(item_ids: list[int], items: list[Items.ItemDict]) -> str:
-    return ', '.join(item['name'] for item in items if "Progressive" not in item["category"] and item['id'] in item_ids)
+def build_singles_message(item_ids: list[int], items: list[Items.ItemDict], all_items: list[Items.ItemDict]) -> str:
+    # Filter out progressive items
+    non_progressive_items = [item for item in items if "Progressive" not in item["category"]]
+    
+    # Group items by rarity (Normal, Magic, Rare, Unique)
+    rarities = ["Normal", "Magic", "Rare", "Unique"]
+    received_by_rarity = {rarity: [] for rarity in rarities}
+    all_items_by_rarity = {rarity: [] for rarity in rarities}
+    
+    # Group received items by rarity
+    for item in non_progressive_items:
+        if item['id'] in item_ids:
+            for rarity in rarities:
+                if rarity in item["category"]:
+                    received_by_rarity[rarity].append(item)
+                    break
+    
+    # Group all available items by rarity (from total_ids)
+    for item in all_items:
+        if "Progressive" not in item["category"]:
+            for rarity in rarities:
+                if rarity in item["category"]:
+                    all_items_by_rarity[rarity].append(item)
+                    break
+    
+    # Check which rarities are complete
+    complete_rarities = []
+    for rarity in rarities:
+        all_ids = {item["id"] for item in all_items_by_rarity[rarity]}
+        received_ids = {item["id"] for item in received_by_rarity[rarity]}
+        if all_ids and all_ids == received_ids:  # Has all items of this rarity
+            complete_rarities.append(rarity)
+    
+    # Build message based on complete rarities
+    message_parts = []
+    
+    # Determine the highest complete rarity tier
+    if complete_rarities:
+        # Check for cumulative completion (need all lower tiers too)
+        if "Unique" in complete_rarities and "Rare" in complete_rarities and "Magic" in complete_rarities and "Normal" in complete_rarities:
+            message_parts.append("Any Rarity")
+        elif "Rare" in complete_rarities and "Magic" in complete_rarities and "Normal" in complete_rarities:
+            message_parts.append("Any up to Rare Rarity")
+        elif "Magic" in complete_rarities and "Normal" in complete_rarities:
+            message_parts.append("Any up to Magic Rarity")
+        elif "Normal" in complete_rarities:
+            message_parts.append("Any Normal Rarity")
+        
+        # Now add incomplete rarities' items individually
+        # Determine which rarities to show individually
+        if "Any Rarity" in message_parts:
+            incomplete_rarities = []  # Don't show anything else
+        elif "Any up to Rare Rarity" in message_parts:
+            incomplete_rarities = ["Unique"]
+        elif "Any up to Magic Rarity" in message_parts:
+            incomplete_rarities = ["Rare", "Unique"]
+        elif "Any Normal Rarity" in message_parts:
+            incomplete_rarities = ["Magic", "Rare", "Unique"]
+        else:
+            incomplete_rarities = rarities  # Show all
+        
+        for rarity in incomplete_rarities:
+            if rarity in received_by_rarity and received_by_rarity[rarity]:
+                message_parts.extend([item['name'] for item in received_by_rarity[rarity]])
+    else:
+        # No complete rarities, list all items individually
+        message_parts = [item['name'] for item in non_progressive_items if item['id'] in item_ids]
+    
+    return ', '.join(message_parts)
 
 
 def rarity_from_progressive_count(count: int) -> str:

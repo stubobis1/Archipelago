@@ -246,13 +246,23 @@ class PathOfExileCommandProcessor(ClientCommandProcessor):
         #required
         self.logger.info(f"Path of Exile apworld version: {POE_VERSION}")
         self.output(f"Path of Exile apworld version: {POE_VERSION}")
+
+        if not self.ctx.slot_data:
+            self.output(f"_________________________________________________________________________________\n"
+                        f"Connect to a multiworld server before starting the Path of Exile client!\n"
+                        f"Use either the GUI or the '/connect' command to connect.\n"
+                        f"_________________________________________________________________________________")
+            return False
+
         if not self.ctx.client_text_path:
             possible_path = find_possible_client_txt_path()
             if possible_path:
                 self.ctx.client_text_path = possible_path
-                self.output(f"Using default a possible client text path located here: {self.ctx.client_text_path},\n "
-                            f"THIS MAY NOT BE THE CORRECT PATH, please verify it is correct, and change it otherwise "
-                            f"using the 'set_client_text_path <path>' command.")
+                self.output(f"_________________________________________________________________________________\n"
+                            f"Using a possible client text path located here: {self.ctx.client_text_path},\n "
+                            f"THIS MAY NOT BE THE CORRECT PATH, please verify it is correct, and change it if wrong "
+                            f"using the 'set_client_text_path <path>' command.\n"
+                            f"_________________________________________________________________________________")
             else:
                 self.output("Please set the client text path using the 'set_client_text_path <path>' command.")
                 return False
@@ -359,6 +369,7 @@ class PathOfExileContext(CommonContext):
     poe_doc_path: str = ""
     generated_version: str = ""
     whisper_updates_enabled: bool = True
+    loaded_client_settings: bool = False
     text_to_send: list[tuple[str, bool]] = [] # list of (message, prepend_char_name) tuples to send to in-game chat
     slot_data = {}
     game_options = {}
@@ -406,12 +417,12 @@ class PathOfExileContext(CommonContext):
                     self.logger.info(log)
                     self.command_processor.output(self=self.command_processor, text=log)
                 else:
-                    log = (f"-----------------------------------------------------------------------------------------\n"+
+                    log = (f"_________________________________________________________________________________\n"+
                            f"Server generated with unsupported version!\n"+
                            f"Server:{self.generated_version}\n"+
                            f"Client:{POE_VERSION}\n"+
                            f"This may cause issues!!!\n"+
-                           f"-----------------------------------------------------------------------------------------")
+                           f"_________________________________________________________________________________")
                     self.logger.warning(log)
                     self.command_processor.output(self=self.command_processor, text=log)
 
@@ -442,6 +453,7 @@ class PathOfExileContext(CommonContext):
                         self.poe_doc_path = settings.get("poe_doc_path", self.poe_doc_path)
                         self.whisper_updates_enabled = settings.get("whisper_updates", False)
                         self.last_received_item_ids = settings.get("already_received_items", [])
+                        self.loaded_client_settings = True
                         logger.debug(f"[DEBUG] Loaded settings: {settings}")
                     if self.poe_doc_path:
                         itemFilter.set_poe_doc_path(self.poe_doc_path)
@@ -452,13 +464,13 @@ class PathOfExileContext(CommonContext):
                 self.command_processor.output(self=self.command_processor, text=msg)
             def load_client_settings(task=None):
                 if not self.seed_name:
-                    self.logger.info("ERROR: No seed name found in RoomInfo!!!!! STILL IDK WHY.")
+                    self.logger.info("[DEBUG]: No seed name found in RoomInfo!!!!! STILL IDK WHY.")
                 task = asyncio.create_task(load_settings(self))
                 task.add_done_callback(injest_load_client_settings)
 
             if not self.seed_name:
 
-                self.logger.info("ERROR: No seed name found in RoomInfo. IDK WHY.")
+                self.logger.info("[DEBUG]: No seed name found in RoomInfo. IDK WHY.")
                 asyncio.create_task(asyncio.sleep(0.2)).add_done_callback(load_client_settings)
 
             else:
@@ -470,17 +482,23 @@ class PathOfExileContext(CommonContext):
             # self.command_processor.output(self=self, text=f"[color=green]{msg}[/color]") #TODO: color in GUI
 
         if cmd == 'ReceivedItems':
-            received_ids: list[int] = [item.item for item in self.items_received]
-            new_items: list[str] = []
-            for network_item in self.items_received:
-                # Newly-obtained items
-                if not network_item.item in self.last_received_item_ids:
-                    new_items.append(str(self.item_names.lookup_in_game(network_item.item)))
-            if self.whisper_updates_enabled:
-                self.text_to_send.append(("You received new items! " + ", ".join(new_items), True))
-            self.last_received_item_ids = received_ids
-            self.update_settings()
+            self.send_received_item_updates()
 
+    def send_received_item_updates(self):
+        if not self.loaded_client_settings:
+            return # don't send updates until settings are loaded, because we would be duplicating messages
+        received_ids: list[int] = [item.item for item in self.items_received]
+        new_items: list[str] = []
+        self.logger.info(f"[DEBUG]: Received {len(received_ids)} items")
+        for network_item in self.items_received:
+            # Newly-obtained items
+            if not network_item.item in self.last_received_item_ids:
+                new_items.append(str(self.item_names.lookup_in_game(network_item.item)))
+        if self.whisper_updates_enabled and new_items:
+            self.text_to_send.append(("You received new items! " + ", ".join(new_items), True))
+        self.last_received_item_ids = received_ids
+        if self.loaded_client_settings:
+            self.update_settings()
     def update_settings(self):
         """Update a setting and save it to the settings file."""
         
