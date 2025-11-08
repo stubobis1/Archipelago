@@ -13,7 +13,6 @@ import Utils
 from CommonClient import ClientCommandProcessor, CommonContext, server_loop, gui_enabled
 from pathlib import Path
 
-from NetUtils import NetworkItem
 from .poeClient.fileHelper import load_settings, save_settings, find_possible_client_txt_path
 from .poeClient import main as poe_main
 from .poeClient import gggAPI
