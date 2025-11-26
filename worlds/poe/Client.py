@@ -13,6 +13,8 @@ import Utils
 from CommonClient import ClientCommandProcessor, CommonContext, server_loop, gui_enabled
 from pathlib import Path
 
+from worlds.poe import Items
+
 from .poeClient.fileHelper import load_settings, save_settings, find_possible_client_txt_path
 from .poeClient import main as poe_main
 from .poeClient import gggAPI
@@ -361,7 +363,7 @@ class PathOfExileContext(CommonContext):
     passives_used: int = 0
     passives_available: int = 0
 
-    last_received_item_ids: list[int] = []
+    previously_received_item_ids: list[int] = []
     character_name: str = ""
     client_text_path: Path = ""
     base_item_filter: str = ""
@@ -450,8 +452,8 @@ class PathOfExileContext(CommonContext):
                         self.character_name = settings.get("last_char", self.character_name)
                         self.base_item_filter = settings.get("base_item_filter", self.base_item_filter)
                         self.poe_doc_path = settings.get("poe_doc_path", self.poe_doc_path)
-                        self.whisper_updates_enabled = settings.get("whisper_updates", False)
-                        self.last_received_item_ids = settings.get("already_received_items", [])
+                        self.whisper_updates_enabled = settings.get("whisper_updates", True)
+                        self.previously_received_item_ids = settings.get("already_received_items", [])
                         self.loaded_client_settings = True
                         logger.debug(f"[DEBUG] Loaded settings: {settings}")
                     if self.poe_doc_path:
@@ -488,16 +490,35 @@ class PathOfExileContext(CommonContext):
             return # don't send updates until settings are loaded, because we would be duplicating messages
         received_ids: list[int] = [item.item for item in self.items_received]
         new_items: list[str] = []
+        added_ids = set()
         self.logger.info(f"[DEBUG]: Received {len(received_ids)} items")
         for network_item in self.items_received:
             # Newly-obtained items
-            if not network_item.item in self.last_received_item_ids:
+            is_more_than_one = Items.item_table[network_item.item].get("count", 0)
+
+            if (not network_item.item in self.previously_received_item_ids or is_more_than_one) and network_item.item not in added_ids:
+                added_ids.add(network_item.item)
+
+                # handle items with more than 1 count
+                if is_more_than_one:
+                    count_of_items_already_received = self.previously_received_item_ids.count(network_item.item)
+                    count_of_sent_received = [i.item for i in self.items_received].count(network_item.item)
+                    count_of_item = count_of_sent_received - count_of_items_already_received
+                    if count_of_item <= 0:
+                        continue
+                    elif count_of_item > 1:
+                        new_items.append(f"{count_of_item}x {str(self.item_names.lookup_in_game(network_item.item))}")
+                    else:# count_of_item == 1:
+                        new_items.append(str(self.item_names.lookup_in_game(network_item.item)))
+                    continue
+
                 new_items.append(str(self.item_names.lookup_in_game(network_item.item)))
         if self.whisper_updates_enabled and new_items:
-            self.text_to_send.append(("You received new items! " + ", ".join(new_items), True))
-        self.last_received_item_ids = received_ids
+            self.text_to_send.append(("You received new items! : " + ", ".join(new_items), True))
+        self.previously_received_item_ids = received_ids
         if self.loaded_client_settings:
             self.update_settings()
+
     def update_settings(self):
         """Update a setting and save it to the settings file."""
         

@@ -278,7 +278,7 @@ async def save_settings(ctx: "PathOfExileContext", path: Path = settings_file_pa
             "base_item_filter": str(ctx.base_item_filter),
             "poe_doc_path": str(ctx.poe_doc_path),
             "whisper_updates": str(ctx.whisper_updates_enabled),
-            "already_received_items": ctx.last_received_item_ids,
+            "already_received_items": ctx.previously_received_item_ids,
         }
 
         # Add/update the world entry in existing settings
