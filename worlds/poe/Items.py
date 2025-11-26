@@ -297,7 +297,18 @@ def get_support_gems_by_required_level(level_minimum:int=0, level_maximum:int=10
     if table is item_table: memoize_cache[key] = result
     return result
 
-def get_utility_skill_gems_by_required_level(level_minimum:int=0, level_maximum:int=100, table: Dict[int, ItemDict] = item_table) -> list[ItemDict]:
+def get_utility_skill_gems_by_required_level_usable_weapon_and_category(available_weapons: set[str], level_minimum:int=0, level_maximum:int=100, table: Dict[int, ItemDict] = item_table, required_categories:set[str]=set()) -> list[ItemDict]:
+    key = f"UtilitySkillGems_{level_minimum}_{level_maximum}_category_" + "_".join(sorted(required_categories))
+    if table is item_table and key in memoize_cache:
+        return memoize_cache[key]
+    result = [item for item in get_utility_skill_gems_by_required_level(level_minimum, level_maximum, table) if
+              any(cat in item["category"] for cat in required_categories) and
+              (any(weapon in available_weapons for weapon in item.get("reqToUse", [])) or not item.get("reqToUse", [])) # we have the weapon, or there are no reqToUse]
+              ]
+    if table is item_table: memoize_cache[key] = result
+    return result
+
+def get_utility_skill_gems_by_required_level(level_minimum:int=0, level_maximum:int=100, table: Dict[int, ItemDict] = item_table, additional_categories:list[str] = None) -> list[ItemDict]:
     key = f"UtilitySkillGems_{level_minimum}_{level_maximum}"
     if table is item_table and key in memoize_cache:
         return memoize_cache[key]
