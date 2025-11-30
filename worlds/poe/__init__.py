@@ -225,7 +225,7 @@ class PathOfExileWorld(World):
     def generate_output(self, output_directory: str):
         if self._debug:
             logger.debug(f"Generating output for {self.game} in {output_directory}")
-            visualize_regions(self.multiworld.get_region(self.origin_region_name, self.player), f"Player{self.player}.puml",
+            visualize_regions(self.multiworld.get_region(self.origin_region_name, self.player), f"PathOfExile-Player{self.player}.puml",
                             show_entrance_names=True,
                             regions_to_highlight=self.multiworld.get_all_state(self.player).reachable_regions[
                                 self.player])
