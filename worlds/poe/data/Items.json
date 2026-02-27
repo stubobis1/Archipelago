@@ -224,7 +224,7 @@
 {"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Crackling Lance","id":215},
 {"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Creeping Frost","id":216},
 {"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Divine Ire","id":217},
-{"category":["MainSkillGem"],"reqLevel":24,"classification":1,"name":"Energy Blade","reqToUse":["Claw","Dagger","Wand","Sword","Axe","Mace","Staff","Sceptre","Fishing Rod"],"id":218},
+{"category":["MainSkillGem"],"reqLevel":24,"classification":1,"name":"Energy Blade","reqToUse":["Claw","Dagger","Wand","Sword","Axe","Mace","Staff","Sceptre"],"id":218},
 {"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Essence Drain","id":219},
 {"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Eye of Winter","id":220},
 {"category":["MainSkillGem"],"reqLevel": 1,"classification":1,"name":"Fireball","id":221},
@@ -317,7 +317,7 @@
 {"category":["MainSkillGem"],"reqLevel":34,"classification":1,"name":"Summon Flame Golem","id":306},
 {"category":["MainSkillGem"],"reqLevel":34,"classification":1,"name":"Summon Stone Golem","id":307},
 {"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Sunder","reqToUse":["Axe","Mace","Staff","Sceptre","Unarmed"],"id":308},
-{"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Sweep","reqToUse":["Staff","Sword","Axe","Mace"],"id":309},
+{"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Holy Sweep","reqToUse":["Staff","Mace"],"id":309},
 {"category":["MainSkillGem"],"reqLevel":28,"classification":1,"name":"Tectonic Slam","reqToUse":["Sword","Axe","Mace","Staff","Sceptre","Unarmed"],"id":310},
 {"category":["MainSkillGem"],"reqLevel": 4,"classification":1,"name":"Vigilant Strike","reqToUse":["Claw","Dagger","Sword","Axe","Mace","Staff","Sceptre"],"id":311},
 {"category":["MainSkillGem"],"reqLevel":12,"classification":1,"name":"Volcanic Fissure","reqToUse":["Axe","Mace","Staff","Sceptre","Unarmed"],"id":312},
@@ -483,7 +483,7 @@
 {"category":["SupportGem"],"reqLevel": 8,"classification":0,"name":"Blind Support","id":470},
 {"category":["SupportGem"],"reqLevel": 8,"classification":0,"name":"Chance to Flee Support","id":471},
 {"category":["SupportGem"],"reqLevel": 8,"classification":1,"name":"Faster Attacks Support","id":472},
-{"category":["SupportGem"],"reqLevel": 8,"classification":1,"name":"Lesser Multiple Projectiles Support","id":473},
+{"category":["SupportGem"],"reqLevel": 8,"classification":1,"name":"Multiple Projectiles Support","id":473},
 {"category":["SupportGem"],"reqLevel": 8,"classification":1,"name":"Locus Mine Support","id":474},
 {"category":["SupportGem"],"reqLevel": 8,"classification":1,"name":"Manaforged Arrows Support","id":475},
 {"category":["SupportGem"],"reqLevel": 8,"classification":1,"name":"Multiple Traps Support","id":476},
@@ -607,7 +607,20 @@
 
 {"category":["UtilSkillGem"],"reqLevel":10,"classification":1,"name":"Wither","id":592},
 
+{"category":["MainSkillGem"],"reqLevel":<UNKOWN>,"classification":1,"name":"Divine Blast","reqToUse":["Shield"],"id":593},
+{"category":["MainSkillGem"],"reqLevel":<UNKOWN>,"classification":1,"name":"Holy Hammers","reqToUse":["Mace","Staff"],"id":594},
+{"category":["MainSkillGem"],"reqLevel":<UNKOWN>,"classification":1,"name":"Holy Strike","reqToUse":["Mace","Sceptre","Staff"],"id":595},
+{"category":["UtilSkillGem"],"reqLevel":<UNKOWN>,"classification":0,"name":"Shield of Light","reqToUse":["Shield"],"id":596},
+{"category":["MainSkillGem"],"reqLevel":<UNKOWN>,"classification":1,"name":"Living Lightning Support","id":597},
+
+{"category":["SupportGem"],"reqLevel":<UNKOWN>,"classification":2,"name":"Blessed Call Support","id":598},
+{"category":["SupportGem"],"reqLevel":<UNKOWN>,"classification":2,"name":"Excommunicate","id":599},
+{"category":["SupportGem"],"reqLevel":<UNKOWN>,"classification":2,"name":"Exemplar Support","id":600},
+{"category":["SupportGem"],"reqLevel":<UNKOWN>,"classification":2,"name":"Hallow","id":601},
+
 {"category":["SupportGem", "Exceptional"],"reqLevel":60,"classification":0,"name":"Enhance Support","id":901},
 {"category":["SupportGem", "Exceptional"],"reqLevel":60,"classification":0,"name":"Empower Support","id":902},
-{"category":["SupportGem", "Exceptional"],"reqLevel":60,"classification":0,"name":"Enlighten Support","id":903}
+{"category":["SupportGem", "Exceptional"],"reqLevel":60,"classification":0,"name":"Enlighten Support","id":903},
+
+{"category":["Character Class","Ascendancy","Scion Class"],"classification":1,"name":"Reliquarian","id":1013}
 ]

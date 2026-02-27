@@ -43,7 +43,7 @@ def get_ascendancy_amount_for_act(act, world: "PathOfExileWorld"):
     return (
         min(
             world.options.ascendancies_available_per_class.value,
-            3 if world.options.starting_character.value != world.options.starting_character.option_scion else 1
+            3 if world.options.starting_character.value != world.options.starting_character.option_scion else 2
         )
     ) if act >= 3 else 0
 
