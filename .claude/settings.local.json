@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:cdn.jsdelivr.net)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:thephar.github.io)",
+      "WebFetch(domain:archipelago.js.org)",
+      "WebFetch(domain:unpkg.com)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}
