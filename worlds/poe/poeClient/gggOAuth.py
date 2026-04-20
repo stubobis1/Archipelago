@@ -40,6 +40,9 @@ _params = {
 _auth_url = f"https://www.pathofexile.com/oauth/authorize?{urllib.parse.urlencode(_params)}"
 access_token = ""
 token_expire_time = None
+slot_info = {}  # Set externally before calling async_oauth_login to pass server/slot/password to tracker
+
+TRACKER_BASE_URL = "https://stubobis1.github.io/pathofexile_ap/"
 # === Step 3: Start local callback server ===
 
 
@@ -67,8 +70,18 @@ async def async_oauth_login() -> dict:
                         self.send_header("Content-Type", "text/html; charset=utf-8")
                         self.end_headers()
                         static_dir = os.path.join(os.path.dirname(__file__), "static")
-                        with open(os.path.join(static_dir, "oauth_success.html"), "rb") as f:
-                            self.wfile.write(f.read())
+                        with open(os.path.join(static_dir, "oauth_success.html"), "r", encoding="utf-8") as f:
+                            html = f.read()
+                        # Build tracker redirect URL with slot info as query params
+                        params = {k: v for k, v in slot_info.items() if v}
+                        redirect_url = TRACKER_BASE_URL
+                        if params:
+                            redirect_url += "?" + urllib.parse.urlencode(params)
+                        html = html.replace(
+                            "url=https://stubobis1.github.io/pathofexile_ap/",
+                            f"url={redirect_url}"
+                        )
+                        self.wfile.write(html.encode("utf-8"))
                         if not code_future.done():
                             code_future.set_result(code)
                         def shutdown_server(server):
