@@ -1,5 +1,6 @@
 import logging
 import os
+import pkgutil
 import sys
 from worlds.poe.poeClient import fileHelper
 fileHelper.load_vendor_modules()
@@ -69,14 +70,12 @@ async def async_oauth_login() -> dict:
                         self.send_response(200)
                         self.send_header("Content-Type", "text/html; charset=utf-8")
                         self.end_headers()
-                        static_dir = os.path.join(os.path.dirname(__file__), "static")
-                        with open(os.path.join(static_dir, "oauth_success.html"), "r", encoding="utf-8") as f:
-                            html = f.read()
+                        html_bytes = pkgutil.get_data("worlds.poe.poeClient", "static/oauth_success.html")
+                        html = html_bytes.decode("utf-8")
                         # Build tracker redirect URL with slot info as query params
                         params = {k: v for k, v in slot_info.items() if v}
-                        redirect_url = TRACKER_BASE_URL
-                        if params:
-                            redirect_url += "?" + urllib.parse.urlencode(params)
+                        params["autoconnect"] = "1"
+                        redirect_url = TRACKER_BASE_URL + "?" + urllib.parse.urlencode(params)
                         html = html.replace(
                             "url=https://stubobis1.github.io/pathofexile_ap/",
                             f"url={redirect_url}"
@@ -92,9 +91,8 @@ async def async_oauth_login() -> dict:
                         self.send_response(400)
                         self.send_header("Content-Type", "text/html; charset=utf-8")
                         self.end_headers()
-                        static_dir = os.path.join(os.path.dirname(__file__), "static")
-                        with open(os.path.join(static_dir, "oauth_error.html"), "rb") as f:
-                            self.wfile.write(f.read())
+                        error_bytes = pkgutil.get_data("worlds.poe.poeClient", "static/oauth_error.html")
+                        self.wfile.write(error_bytes)
 
 
         logger.info(f"🔊 Listening for callback on {REDIRECT_URI} ...")
@@ -106,7 +104,12 @@ async def async_oauth_login() -> dict:
             raise e
         webbrowser.open(_auth_url)
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, server.serve_forever)
+        executor_future = loop.run_in_executor(None, server.serve_forever)
+        try:
+            await executor_future
+        except asyncio.CancelledError:
+            server.shutdown()
+            raise
         code = await code_future
 
         async with httpx.AsyncClient() as client:
