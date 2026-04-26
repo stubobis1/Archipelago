@@ -5,12 +5,13 @@ import type { ReceivedItem } from '@shared/types'
 import { logger } from './logger'
 
 export type APEvent =
-  | { type: 'connected'; slot: string; players: string[]; slotData: any }
+  | { type: 'connected'; slot: string; players: string[]; slotData: any; seedName: string }
   | { type: 'disconnected' }
   | { type: 'item'; item: ReceivedItem }
   | { type: 'chat'; who: string; msg: string }
   | { type: 'hint'; finder: string; receiver: string; location: string; item: string }
   | { type: 'locationsChecked'; ids: number[] }
+  | { type: 'deathlink'; source: string }
   | { type: 'error'; msg: string }
 
 type Listener = (ev: APEvent) => void
@@ -20,6 +21,7 @@ function createAPSocket() {
   let listeners:      Listener[] = []
   let _connected    = false
   let _slot         = ''
+  let _seedName     = ''
   let _locationFlags = new Map<number, number>()
 
   const emit = (ev: APEvent) => listeners.forEach(l => l(ev))
@@ -56,7 +58,11 @@ function createAPSocket() {
       let _slotData: any = null
       client.socket.on('receivedPacket', (pkt: any) => {
         logger.debug('[AP] packet:', pkt?.cmd)
+        if (pkt?.cmd === 'RoomInfo') _seedName = pkt.seed_name ?? ''
         if (pkt?.cmd === 'Connected') _slotData = pkt.slot_data ?? null
+        if (pkt?.cmd === 'Bounced' && Array.isArray(pkt?.tags) && pkt.tags.includes('DeathLink')) {
+          emit({ type: 'deathlink', source: pkt?.data?.source ?? '' })
+        }
       })
 
       client.socket.on('invalidPacket', (pkt: any) => {
@@ -73,7 +79,7 @@ function createAPSocket() {
           .map((p: any) => p.alias as string)
 
         logger.info(`[AP] players in room: ${players.join(', ')}`)
-        emit({ type: 'connected', slot: slotName, players, slotData: _slotData })
+        emit({ type: 'connected', slot: slotName, players, slotData: _slotData, seedName: _seedName })
 
         // Scout missing locations for item flag data (used in filter classification)
         const missing: number[] = client.room?.missingLocations ?? []
@@ -152,6 +158,7 @@ function createAPSocket() {
       try { client.socket.disconnect() } catch {}
       client         = null
       _connected     = false
+      _seedName      = ''
       _locationFlags = new Map()
     },
 
@@ -197,6 +204,21 @@ function createAPSocket() {
       } catch (e: any) {
         logger.warn('[AP] getUncheckedBaseItems error:', e?.message)
         return []
+      }
+    },
+
+    /** Send CLIENT_GOAL status to the AP server (status = 30). */
+    sendGoalComplete(): void {
+      if (!client || !_connected) return
+      try {
+        // archipelago.js v2: client.updateStatus; fallback to raw packet
+        if (typeof client.updateStatus === 'function') {
+          client.updateStatus(30)
+        } else {
+          client.socket?.send?.({ cmd: 'StatusUpdate', status: 30 })
+        }
+      } catch (e: any) {
+        logger.warn('[AP] sendGoalComplete failed:', e?.message)
       }
     },
 

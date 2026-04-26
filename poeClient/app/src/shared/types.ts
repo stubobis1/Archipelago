@@ -113,6 +113,12 @@ export interface APBoss {
   drops:      { name: string }[]
 }
 
+export interface AlternateGem {
+  name:    string
+  baseGem: string
+  type:    string
+}
+
 export interface ReceivedItem {
   id:    number
   name:  string

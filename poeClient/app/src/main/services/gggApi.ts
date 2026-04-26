@@ -77,11 +77,13 @@ export interface GGGCharacter {
   passives?:  unknown
 }
 
+/** Fetch full character data (equipment, passives, jewels) from the GGG API. */
 export async function fetchCharacter(name: string): Promise<GGGCharacter> {
   const res = await apiGet<{ character: GGGCharacter }>(`/character/${encodeURIComponent(name)}`)
   return res.character
 }
 
+/** Fetch the account's character list; result is cached for 60 s and de-duplicated in-flight. */
 export async function fetchCharacterList(): Promise<{ name: string; class: string; level: number; league: string }[]> {
   if (_charListCache && Date.now() - _charListCacheMs < CHAR_LIST_TTL) return _charListCache
   if (_charListInflight) return _charListInflight
@@ -95,6 +97,7 @@ export async function fetchCharacterList(): Promise<{ name: string; class: strin
   return _charListInflight
 }
 
+/** Fetch stash tab metadata (id, name, type) for the given league. */
 export async function fetchStashTabs(league: string): Promise<{ id: string; name: string; type: string }[]> {
   const res = await apiGet<{ stashes: { id: string; name: string; type: string }[] }>(
     `/stash/${encodeURIComponent(league)}`
@@ -110,6 +113,10 @@ const CHAR_LIST_TTL  = 60_000  // 60s
 let _cachedChar: GGGCharacter | null = null
 let _cacheTime = 0
 
+/**
+ * Return character data from a 30-second in-memory cache.
+ * Falls back to the stale cache rather than throwing on network error.
+ */
 export async function getCachedCharacter(name: string, forceRefresh = false): Promise<GGGCharacter | null> {
   if (!forceRefresh && _cachedChar && _cachedChar.name === name && Date.now() - _cacheTime < 30_000) {
     return _cachedChar
@@ -123,6 +130,7 @@ export async function getCachedCharacter(name: string, forceRefresh = false): Pr
   }
 }
 
+/** Invalidate the character cache so the next call to `getCachedCharacter` hits the API. */
 export function clearCharCache(): void {
   _cachedChar = null
   _cacheTime  = 0

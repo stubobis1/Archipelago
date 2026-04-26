@@ -35,7 +35,11 @@ function createSettingsService() {
   function getStore(key: string): Store<Settings> {
     const existing = stores.get(key)
     if (existing) return existing
-    const store = new Store<Settings>({ name: `settings-${key}`, defaults: DEFAULTS })
+    // Per-world stores inherit current global settings so paths/oauth carry over on first connect
+    const defaults = key !== 'default'
+      ? { ...DEFAULTS, ...(stores.get('default')?.store ?? {}) }
+      : DEFAULTS
+    const store = new Store<Settings>({ name: `settings-${key}`, defaults })
     stores.set(key, store)
     return store
   }

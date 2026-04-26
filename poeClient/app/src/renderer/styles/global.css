@@ -57,9 +57,12 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
 
 .app { background: var(--bg); color: var(--ink); width: 100vw; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-family: var(--sans); position: relative; }
 
-.titlebar { height: 32px; background: var(--bg-2); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: var(--ink-3); -webkit-app-region: drag; flex-shrink: 0; gap: 12px; }
-.titlebar .title { font-weight: 500; color: var(--ink-2); letter-spacing: .02em; }
-.titlebar .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px currentColor; color: var(--ok); }
+.titlebar { height: 36px; background: var(--bg-2); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: var(--ink-3); -webkit-app-region: drag; flex-shrink: 0; gap: 10px; }
+.titlebar-logo { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; opacity: .9; flex-shrink: 0; }
+.titlebar .title { font-family: var(--display); font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: .01em; display: flex; align-items: baseline; gap: 5px; line-height: 1; }
+.titlebar .title em { color: var(--accent); font-style: italic; }
+.titlebar .title-sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); padding-left: 3px; border-left: 1px solid var(--rule-2); }
+.titlebar .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 5px currentColor; color: var(--ok); flex-shrink: 0; }
 .titlebar .status-dot.off { color: var(--ink-4); background: var(--ink-4); box-shadow: none; }
 .titlebar .status-dot.warn { color: var(--warn); background: var(--warn); }
 .titlebar .spacer { flex: 1; }
@@ -179,7 +182,7 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
 .chat-input { all: unset; flex: 1; color: var(--ink); font-size: 13px; font-family: var(--mono); }
 .chat-input::placeholder { color: var(--ink-4); }
 
-.eq-grid { display: grid; grid-template-columns: 1.6fr 1.6fr 0.7fr 1fr 1fr 0.7fr 1.6fr 1.6fr; gap: 4px; max-width: 780px; margin: 0 auto; grid-template-areas: ". . . helmet helmet . . ." "weapon weapon . helmet helmet . offhand offhand" "weapon weapon . body body amulet offhand offhand" "weapon weapon ringleft body body ringright offhand offhand" ". gloves gloves body body boots boots ." ". gloves gloves belt belt boots boots ." "flasks flasks flasks flasks flasks flasks flasks flasks"; }
+.eq-grid { display: grid; grid-template-columns: 1.6fr 1.6fr 0.7fr 1.4fr 1.4fr 0.7fr 1.6fr 1.6fr; gap: 4px; max-width: 780px; margin: 0 auto; grid-template-areas: ". . . helmet helmet . . ." "weapon weapon . helmet helmet . offhand offhand" "weapon weapon . body body amulet offhand offhand" "weapon weapon ringleft body body ringright offhand offhand" ". gloves gloves body body boots boots ." ". gloves gloves belt belt boots boots ." "flasks flasks flasks flasks flasks flasks flasks flasks"; }
 .eq-slot { background: var(--bg-2); border: 1px solid var(--rule); border-radius: 3px; padding: 8px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; min-height: 80px; }
 .eq-slot-title { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
 .eq-silhouette { display: flex; align-items: center; justify-content: center; color: var(--ink-4); opacity: .35; flex-shrink: 0; }
@@ -210,6 +213,8 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
 /* ── Equipment AP tiers ──────────────────────────────────────────────── */
 .eq-slot-empty { opacity: .5; }
 .eq-slot-img { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
+.eq-slot-lg .eq-slot-img { width: 80px; height: 80px; }
+.eq-slot-lg { min-height: 160px; }
 .eq-rarity-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: center; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .eq-rarity-sep  { color: var(--rule-2); font-size: 9px; padding: 0 1px; }
 .eq-rarity-off  { color: var(--ink-4); opacity: .4; }

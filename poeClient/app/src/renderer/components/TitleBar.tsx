@@ -1,5 +1,6 @@
 import React from 'react'
 import { useStore } from '../store'
+import logoUrl from '@resources/poeAP.png'
 
 export function TitleBar() {
   const { connection, char, slotName, clientTxtOk, filterOk, action } = useStore()
@@ -18,8 +19,12 @@ export function TitleBar() {
 
   return (
     <div className="titlebar">
+      <img src={logoUrl} className="titlebar-logo" alt="" />
+      <span className="title">
+        Path of <em>Exile</em>
+        <span className="title-sub">Archipelago</span>
+      </span>
       <div className={`status-dot ${dotClass}`} />
-      <span className="title">PoE Archipelago</span>
       {charLabel && <span className="muted mono" style={{ fontSize: 10 }}>{charLabel}</span>}
       <span className="spacer" />
       <span className="mono muted" style={{ fontSize: 10 }}>

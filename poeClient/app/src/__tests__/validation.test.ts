@@ -9,6 +9,7 @@ vi.mock('../main/data', () => ({
     { name: 'Magic Helmet',  classification: 'Useful', category: ['Helmet'] },
     { name: 'Fireball',      classification: 'Filler', category: ['MainSkillGem'] },
   ]),
+  getAlternateGems: vi.fn(() => ({})),
 }))
 
 // ── checkGoalZone ─────────────────────────────────────────────────────────────

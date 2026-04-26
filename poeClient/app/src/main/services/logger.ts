@@ -10,6 +10,7 @@ log.transports.file.maxSize = 5 * 1024 * 1024
 
 export const logger = log
 
+/** Write the startup banner and begin catching unhandled exceptions into the log file. */
 export function initLogger(): void {
   log.info('=== PoE Archipelago Client starting ===')
   log.info('Log file:', log.transports.file.getFile().path)

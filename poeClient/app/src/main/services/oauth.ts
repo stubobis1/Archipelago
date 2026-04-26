@@ -44,6 +44,11 @@ function httpsPost(url: string, body: string): Promise<string> {
 
 let activeWin: BrowserWindow | null = null
 
+/**
+ * Open a GGG OAuth2 login window using PKCE.
+ * Blocks until the user completes (or closes) the popup, then persists the
+ * access token and expiry into settings.
+ */
 export async function startOAuthFlow(): Promise<void> {
   const { verifier, challenge } = generatePKCE()
   const state = base64url(crypto.randomBytes(16))
@@ -110,6 +115,7 @@ export async function startOAuthFlow(): Promise<void> {
   })
 }
 
+/** Returns the stored OAuth token if it exists and has not expired, otherwise `null`. */
 export function getValidToken(): string | null {
   const s = settingsService.get()
   if (!s.oauthToken || !s.oauthExpires) return null
@@ -117,10 +123,12 @@ export function getValidToken(): string | null {
   return s.oauthToken
 }
 
+/** Wipe the stored OAuth token, expiry, and linked poeUuid from settings. */
 export function clearToken(): void {
   settingsService.setMany({ oauthToken: null, oauthExpires: null, poeUuid: null })
 }
 
+/** Returns a human-readable time remaining string (`"4h"`, `"2d"`) or `null` if expired/absent. */
 export function tokenTimeLeft(): string | null {
   const s = settingsService.get()
   if (!s.oauthToken || !s.oauthExpires) return null

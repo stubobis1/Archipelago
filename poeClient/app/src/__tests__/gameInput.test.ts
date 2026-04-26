@@ -6,10 +6,11 @@ let execFileError: Error | null = null
 
 // child_process must be mocked before module import.
 // execFile can be called as (cmd, args, cb) or (cmd, args, opts, cb) — handle both.
+// Wrap result in { stdout, stderr } so promisify resolves to the same shape as real execFile.
 vi.mock('child_process', () => ({
   execFile: vi.fn((_cmd: string, _args: string[], _optsOrCb: any, _cb?: any) => {
     const cb = typeof _cb === 'function' ? _cb : _optsOrCb
-    cb(execFileError, execFileStdout, '')
+    cb(execFileError, { stdout: execFileStdout, stderr: '' })
     return {} as any
   }),
 }))

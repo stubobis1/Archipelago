@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import type { APItem, APBaseItem, APBoss } from '@shared/types'
+import type { APItem, APBaseItem, APBoss, AlternateGem } from '@shared/types'
 
 function dataDir(): string {
   return process.env.NODE_ENV === 'development'
@@ -40,9 +40,10 @@ function readJson<T>(name: string): T {
 }
 
 // Lazy-loaded singletons — parsed once on first access
-let _items:     APItem[]                   | null = null
-let _baseItems: APBaseItem[]               | null = null
-let _bosses:    Record<string, APBoss>     | null = null
+let _items:     APItem[]                        | null = null
+let _baseItems: APBaseItem[]                    | null = null
+let _bosses:    Record<string, APBoss>          | null = null
+let _altGems:   Record<string, AlternateGem>   | null = null
 
 /** All AP item definitions (lazy-loaded from Items.json). */
 export function getItems(): APItem[] {
@@ -57,6 +58,11 @@ export function getBaseItems(): APBaseItem[] {
 /** All AP boss definitions keyed by name (lazy-loaded from Bosses.json). */
 export function getBosses(): Record<string, APBoss> {
   return (_bosses ??= readJson<Record<string, APBoss>>('Bosses.json'))
+}
+
+/** Alternate gem map keyed by alternate gem name (lazy-loaded from AlternateGems.json). */
+export function getAlternateGems(): Record<string, AlternateGem> {
+  return (_altGems ??= readJson<Record<string, AlternateGem>>('AlternateGems.json'))
 }
 
 /** Look up a single AP item by name. */

@@ -1,12 +1,10 @@
 // Port of worlds/poe/poeClient/validationLogic.py
 import type { GGGCharacter } from './services/gggApi'
-import type { ReceivedItem, ValidationError } from '@shared/types'
-import { getItems } from './data'
+import type { APBoss, ReceivedItem, ValidationError } from '@shared/types'
+import { getAlternateGems } from './data'
 
-// frameType: 0=normal 1=magic 2=rare 3=unique
-const RARITY_NAMES = ['Normal', 'Magic', 'Rare', 'Unique']
+const RARITY_NAMES = ['Normal', 'Magic', 'Rare', 'Unique'] as const
 
-// GucciHoboMode values from Options.py
 const enum GucciHoboMode {
   Disabled         = 0,
   OneSlotAnyRarity = 1,
@@ -14,95 +12,189 @@ const enum GucciHoboMode {
   NoNonUnique      = 3,
 }
 
-const SLOT_NAMES = [
-  'BodyArmour', 'Amulet', 'Belt', 'Boots', 'Gloves',
-  'Helmet', 'Ring', 'Ring2', 'Weapon', 'Offhand',
-]
+const SIMPLE_SLOTS   = ['BodyArmour', 'Amulet', 'Belt', 'Boots', 'Gloves', 'Helmet']
+const WEAPON_TYPES   = ['Axe', 'Bow', 'Claw', 'Dagger', 'Mace', 'Sceptre', 'Staff', 'Sword', 'Wand', 'Shield', 'Quiver']
+const IGNORE_INV_IDS = new Set(['BrequelGrafts', 'BrequelGrafts2'])
 
 export interface ValidationCtx {
-  receivedItems:  ReceivedItem[]
-  gucciMode?:     number
-  goal?:          number
-  seedName?:      string
+  receivedItems: ReceivedItem[]
+  gucciMode?:    number
+  goal?:         number
+  seedName?:     string
 }
 
-function rarityCheck(
-  receivedNames: Set<string>,
-  rarity: number,
-  slot: string,
-  gucciMode: GucciHoboMode,
-): string | null {
-  if (gucciMode === GucciHoboMode.Disabled) return null
-  if (rarity === 3) return null  // unique always OK
-
-  if (gucciMode === GucciHoboMode.NoNonUnique) {
-    return `${slot}: only unique items allowed (GucciHobo mode 3)`
-  }
-  if (gucciMode === GucciHoboMode.OneSlotNormal) {
-    return rarity > 0 ? `${slot}: only Normal rarity items allowed (GucciHobo mode 2)` : null
-  }
-  return null
+function rarityName(frameType: number): string {
+  return RARITY_NAMES[frameType] ?? 'Normal'
 }
 
-/**
- * Validate equipped items against received AP items.
- * Returns one error per slot/gem that violates the current GucciHobo mode or is not yet received.
- */
+function countNamed(names: string[], target: string): number {
+  let n = 0
+  for (const x of names) if (x === target) n++
+  return n
+}
+
+// Port of Python rarity_check(): validate slot rarity against progressive/specific received items
+function rarityCheck(receivedNames: string[], frameType: number, slot: string): string | null {
+  const rarity = rarityName(frameType)
+  const prog   = countNamed(receivedNames, `Progressive ${slot}`)
+  let valid: boolean
+  if      (rarity === 'Unique') valid = receivedNames.includes(`Unique ${slot}`) || prog >= 4
+  else if (rarity === 'Rare')   valid = receivedNames.includes(`Rare ${slot}`)   || prog >= 3
+  else if (rarity === 'Magic')  valid = receivedNames.includes(`Magic ${slot}`)  || prog >= 2
+  else                          valid = receivedNames.includes(`Normal ${slot}`)  || prog >= 1
+  return valid ? null : slot
+}
+
+// GGG API v2 returns equipment as an array; normalize to array regardless
+function toEquipArray(char: GGGCharacter): any[] {
+  if (!char.equipment) return []
+  return Array.isArray(char.equipment) ? char.equipment as any[] : Object.values(char.equipment)
+}
+
 export function validateCharEquipment(char: GGGCharacter, ctx: ValidationCtx): ValidationError[] {
-  const receivedNames = new Set(ctx.receivedItems.map(i => i.name))
-  const equipment = (char.equipment ?? {}) as Record<string, any>
+  const receivedNames = ctx.receivedItems.map(i => i.name)
+  const errors: ValidationError[] = []
+  const altGems = getAlternateGems()
 
-  return SLOT_NAMES.flatMap(slot => {
-    const item = equipment[slot]
-    if (!item) return []
+  // Class ownership
+  const charClass: string = (char as any).class ?? ''
+  if (charClass && !receivedNames.includes(charClass)) {
+    errors.push({ slot: 'Class', msg: `Class ${charClass} not received` })
+  }
 
-    const errors: ValidationError[] = []
+  const items = toEquipArray(char)
+  const gucciTally: Record<string, number> = {}
+  let normalFlasks = 0, magicFlasks = 0, uniqueFlasks = 0
 
-    const rarityErr = rarityCheck(receivedNames, item.frameType ?? 0, slot, ctx.gucciMode ?? 0)
-    if (rarityErr) errors.push({ slot, msg: rarityErr })
+  for (const item of items) {
+    const inv: string = item.inventoryId ?? ''
+    const ft: number  = item.frameType   ?? 0
+    const rarity      = rarityName(ft)
 
-    const gemErrors = (item.socketedItems as any[] ?? [])
-      .filter(gem => gem.typeLine && !gem.support)
-      .filter(gem => ![...receivedNames].some(n => n.includes(gem.typeLine) || gem.typeLine.includes(n)))
-      .map(gem => ({ slot: `${slot}:gem`, msg: `${gem.typeLine} not yet received` }))
+    if (IGNORE_INV_IDS.has(inv)) continue
 
-    return [...errors, ...gemErrors]
-  })
+    // Simple armour/accessory slots
+    if (SIMPLE_SLOTS.includes(inv)) {
+      const e = rarityCheck(receivedNames, ft, inv)
+      if (e) errors.push({ slot: inv, msg: e })
+    }
+
+    // Rings
+    if (inv === 'Ring')  { const e = rarityCheck(receivedNames, ft, 'Ring (left)');  if (e) errors.push({ slot: inv, msg: e }) }
+    if (inv === 'Ring2') { const e = rarityCheck(receivedNames, ft, 'Ring (right)'); if (e) errors.push({ slot: inv, msg: e }) }
+
+    // Weapon/offhand — detect type from item properties
+    if (inv === 'Weapon' || inv === 'Offhand') {
+      for (const prop of (item.properties ?? []) as { name: string }[]) {
+        for (const wt of WEAPON_TYPES) {
+          if (prop.name?.toLowerCase().endsWith(wt.toLowerCase())) {
+            const e = rarityCheck(receivedNames, ft, wt)
+            if (e) errors.push({ slot: inv, msg: e })
+          }
+        }
+      }
+    }
+
+    // Flask slots (Flask1–Flask5)
+    if (/^Flask\d*$/.test(inv)) {
+      if      (rarity === 'Normal') normalFlasks++
+      else if (rarity === 'Magic')  magicFlasks++
+      else if (rarity === 'Unique') uniqueFlasks++
+      continue  // skip rarity/gem checks for flasks
+    }
+
+    // Socketed gems
+    let supportCount = 0
+    for (const gem of (item.socketedItems ?? []) as any[]) {
+      if (gem.support) supportCount++
+      const bt: string = gem.baseType ?? gem.typeLine ?? ''
+      if (!bt || bt.toLowerCase().includes('eye jewel')) continue
+
+      if (bt.startsWith('Vaal ')) {
+        if (!receivedNames.includes('Vaal Gems'))
+          errors.push({ slot: `${inv}:gem`, msg: `Vaal gem ${bt} requires "Vaal Gems"` })
+        continue
+      }
+      const alt = altGems[bt]
+      if (alt) {
+        if (!receivedNames.includes(alt.baseGem))
+          errors.push({ slot: `${inv}:gem`, msg: `Alt gem ${bt} requires ${alt.baseGem}` })
+        continue
+      }
+      if (!receivedNames.includes(bt))
+        errors.push({ slot: `${inv}:gem`, msg: `${bt} not received` })
+    }
+
+    // Link count: support gems linked > received progressive link items
+    const linksHeld = countNamed(receivedNames, `Progressive max links - ${inv}`)
+    if (supportCount > linksHeld)
+      errors.push({ slot: inv, msg: `Too many supports in ${item.typeLine ?? inv} (${supportCount} linked, ${linksHeld} received)` })
+
+    // Track non-flask rarity for Gucci mode
+    gucciTally[rarity] = (gucciTally[rarity] ?? 0) + 1
+  }
+
+  // Flask rarity caps (max 5 of each type)
+  let fp = countNamed(receivedNames, 'Progressive Flask Unlock')
+  const normalAllowed = Math.min(5, Math.max(countNamed(receivedNames, 'Progressive Normal Flask Unlock'), fp))
+  fp -= 5
+  const magicAllowed  = Math.min(5, Math.max(countNamed(receivedNames, 'Progressive Magic Flask Unlock'),  Math.max(0, fp)))
+  fp -= 5
+  const uniqueAllowed = Math.min(5, Math.max(countNamed(receivedNames, 'Progressive Unique Flask Unlock'), Math.max(0, fp)))
+  if (normalFlasks > normalAllowed) errors.push({ slot: 'Flask', msg: `Too many Normal flasks (${normalFlasks}/${normalAllowed} allowed)` })
+  if (magicFlasks  > magicAllowed)  errors.push({ slot: 'Flask', msg: `Too many Magic flasks (${magicFlasks}/${magicAllowed} allowed)` })
+  if (uniqueFlasks > uniqueAllowed) errors.push({ slot: 'Flask', msg: `Too many Unique flasks (${uniqueFlasks}/${uniqueAllowed} allowed)` })
+
+  // Gucci Hobo mode
+  const gm = ctx.gucciMode ?? GucciHoboMode.Disabled
+  if (gm !== GucciHoboMode.Disabled) {
+    const n = gucciTally['Normal'] ?? 0, mg = gucciTally['Magic'] ?? 0, r = gucciTally['Rare'] ?? 0
+    if (gm === GucciHoboMode.OneSlotAnyRarity && n + mg + r > 1)
+      errors.push({ slot: 'GucciHobo', msg: 'Max 1 non-unique item (mode 1)' })
+    if (gm === GucciHoboMode.OneSlotNormal && (n > 1 || mg + r > 0))
+      errors.push({ slot: 'GucciHobo', msg: 'Max 1 Normal item, no Magic/Rare (mode 2)' })
+    if (gm === GucciHoboMode.NoNonUnique && n + mg + r > 0)
+      errors.push({ slot: 'GucciHobo', msg: 'No non-unique items allowed (mode 3)' })
+  }
+
+  return errors
 }
 
-/**
- * Validate passive point allocation against received AP passive items.
- * Flags over-allocation (more than received × 2 + 24 baseline).
- */
 export function validatePassivePoints(char: GGGCharacter, ctx: ValidationCtx): ValidationError[] {
-  const received  = ctx.receivedItems.filter(i =>
-    i.classification === 'PassiveSkillPoint' || i.name.includes('Passive')
-  ).length
-  const allocated = (char.passives as any)?.hashes?.length ?? 0
-  const max       = received * 2 + 24
-
-  if (allocated > max) {
-    return [{ slot: 'Passives', msg: `${allocated} passives allocated but only ${received} received (max ~${max})` }]
+  // Count received "Progressive passive point" items (1:1 ratio, no multiplier)
+  const passiveItems = ctx.receivedItems.filter(i => i.name === 'Progressive passive point').length
+  const allocated    = (char.passives as any)?.hashes?.length ?? 0
+  if (allocated > passiveItems) {
+    return [{ slot: 'Passives', msg: `${allocated - passiveItems} over-allocated (${allocated} used, ${passiveItems} received)` }]
   }
   return []
 }
 
-/** Zone name reached at the end of each act (for campaign/act completion goals). */
-const GOAL_ZONES: Record<number, string> = {
-  0: 'Karui Shores',   // full campaign
-  1: 'Southern Forest',
-  2: 'City of Sarn',
-  3: 'Aqueduct',
-  4: 'Slave Pens',
-  5: 'Karui Fortress',
-  6: 'Bridge Encampment',
-  7: 'Sarn Ramparts',
-  8: 'Blood Aqueduct',
+// Goal zone names keyed by Options.Goal values
+export const GOAL_ZONES: Record<number, string> = {
+  0: 'Karui Shores',
+  1: 'The Southern Forest',
+  2: 'The City of Sarn',
+  3: 'The Aqueduct',
+  4: 'The Slave Pens',
+  5: 'The Karui Fortress',
+  6: 'The Bridge Encampment',
+  7: 'The Sarn Ramparts',
+  8: 'The Blood Aqueduct',
   9: 'Oriath Docks',
 }
 
-/** Returns `true` when the player has entered the completion zone for the given goal type. */
+/** Returns true when the player has entered the goal completion zone. */
 export function checkGoalZone(goalType: number, zone: string): boolean {
   const target = GOAL_ZONES[goalType]
   return !!target && zone === target
+}
+
+/** Scan character inventory for boss drops. Returns defeated boss keys (e.g. "defeat hydra"). */
+export function checkBossDrops(char: GGGCharacter, bosses: Record<string, APBoss>): string[] {
+  const inv: any[]  = Array.isArray((char as any).inventory) ? (char as any).inventory : []
+  const heldNames   = new Set(inv.map((i: any) => i.name || i.typeLine || '').filter(Boolean))
+  return Object.entries(bosses)
+    .filter(([, boss]) => boss.drops.some(d => heldNames.has(d.name)))
+    .map(([key]) => key)
 }

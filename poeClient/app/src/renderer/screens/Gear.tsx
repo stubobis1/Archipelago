@@ -86,15 +86,15 @@ function LinkDots({ linkName, unlocked }: { linkName: string; unlocked: boolean 
   )
 }
 
-function EqSlot({ area, title, base, imgFile, linkName, variant = 'row' }: {
+function EqSlot({ area, title, base, imgFile, linkName, variant = 'row', slotClass = '' }: {
   area: string; title: string; base: string; imgFile: string
-  linkName?: string; variant?: 'row' | 'stack' | '2col'
+  linkName?: string; variant?: 'row' | 'stack' | '2col'; slotClass?: string
 }) {
   const counts   = useCounts()
   const tiers    = slotTiers(counts, base)
   const unlocked = tiers.some(Boolean)
   return (
-    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}`} style={{ gridArea: area }}>
+    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}${slotClass ? ` ${slotClass}` : ''}`} style={{ gridArea: area }}>
       <div className="eq-slot-title">{title}</div>
       <img className="eq-slot-img" src={imgUrl(imgFile)} alt={title}
         onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
@@ -106,13 +106,13 @@ function EqSlot({ area, title, base, imgFile, linkName, variant = 'row' }: {
   )
 }
 
-function MultiSlot({ area, title, subs, linkName, imgFile }: {
-  area: string; title: string; subs: string[]; linkName?: string; imgFile?: string
+function MultiSlot({ area, title, subs, linkName, imgFile, slotClass = '' }: {
+  area: string; title: string; subs: string[]; linkName?: string; imgFile?: string; slotClass?: string
 }) {
   const counts   = useCounts()
   const unlocked = subs.some(sub => slotTiers(counts, sub).some(Boolean))
   return (
-    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}`} style={{ gridArea: area }}>
+    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}${slotClass ? ` ${slotClass}` : ''}`} style={{ gridArea: area }}>
       <div className="eq-slot-title">{title}</div>
       {imgFile && (
         <img className="eq-slot-img" src={imgUrl(imgFile)} alt={title}
@@ -184,8 +184,8 @@ export function GearScreen() {
             <div className="eq-grid">
               <EqSlot area="helmet"     title="Helmet"      base="Helmet"     imgFile="normalhelmet"     linkName="Helm"       variant="2col" />
               <MultiSlot area="weapon"  title="Weapon"      subs={WEAPON_SUBS}                           linkName="Weapon" />
-              <MultiSlot area="offhand" title="Offhand"     subs={OFFHAND_SUBS}                          linkName="Offhand"   imgFile="normalshield" />
-              <EqSlot area="body"       title="Body Armour" base="BodyArmour" imgFile="normalbodyarmour" linkName="BodyArmour" variant="2col" />
+              <MultiSlot area="offhand" title="Offhand"     subs={OFFHAND_SUBS}                          linkName="Offhand"   imgFile="normalshield" slotClass="eq-slot-lg" />
+              <EqSlot area="body"       title="Body Armour" base="BodyArmour" imgFile="normalbodyarmour" linkName="BodyArmour" variant="2col" slotClass="eq-slot-lg" />
               <EqSlot area="amulet"     title="Amulet"      base="Amulet"     imgFile="normalamulet"                          variant="stack" />
               <EqSlot area="ringleft"   title="Left Ring"   base="Ring (left)"  imgFile="normalring(left)"                    variant="stack" />
               <EqSlot area="ringright"  title="Right Ring"  base="Ring (right)" imgFile="normalring(right)"                   variant="stack" />
