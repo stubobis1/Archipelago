@@ -1,0 +1,29 @@
+# Dependencies
+app/node_modules/
+
+# Build output
+app/out/
+app/dist/
+
+# Vite cache
+app/.vite/
+
+# Coverage
+app/coverage/
+
+# Logs
+*.log
+
+# Temp/probe scripts
+app/probe_*.js
+app/probe_*.mjs
+app/test_*.js
+
+# Electron builder artifacts
+app/*.AppImage
+app/*.exe
+app/*.dmg
+app/*.zip
+
+# Backup files
+app/package.json.bak

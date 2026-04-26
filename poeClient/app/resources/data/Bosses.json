@@ -1,0 +1,280 @@
+{
+  "hydra": {
+    "name": "defeat hydra",
+    "id": 41301,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Fragment of the Hydra"}
+    ]
+  },
+  "phoenix": {
+    "name": "defeat phoenix",
+    "id": 41302,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Fragment of the Phoenix"}
+    ]
+  },
+  "chimera": {
+    "name": "defeat chimera",
+    "id": 41303,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Fragment of the Chimera"}
+    ]
+  },
+  "minotaur": {
+    "name": "defeat minotaur",
+    "id": 41304,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Fragment of the Minotaur"}
+    ]
+  },
+  "shaper": {
+    "name": "defeat shaper",
+    "id": 41305,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Shaper's Touch"},
+      {"name": "Voidwalker"},
+      {"name": "Solstice Vigil"},
+      {"name": "Dying Sun"}
+    ]
+  },
+  "uber_shaper": {
+    "name": "defeat uber_shaper",
+    "id": 41306,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "Echoes of Creation"},
+      {"name": "Entropic Devastation"},
+      {"name": "The Tides of Time"},
+      {"name": "Starforge"}
+    ]
+  },
+  "elder": {
+    "name": "defeat elder",
+    "id": 41307,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Cyclopean Coil"},
+      {"name": "Blasphemer's Grasp"},
+      {"name": "Nebuloch"},
+      {"name": "Hopeshredder"},
+      {"name": "Shimmeron"},
+      {"name": "Impresence"}
+    ]
+  },
+  "uber_elder": {
+    "name": "defeat uber_elder",
+    "id": 41308,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Mark of the Shaper"},
+      {"name": "Mark of the Elder"},
+      {"name": "Voidfletcher"},
+      {"name": "Indigon"},
+      {"name": "Disintegrator"}
+    ]
+  },
+  "uber_uber_elder": {
+    "name": "defeat uber_uber_elder",
+    "id": 41309,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "Call of the Void"},
+      {"name": "The Devourer of Minds"},
+      {"name": "Soul Ascension"},
+      {"name": "Impresence", "ilvl": 87},
+      {"name": "The Eternity Shroud"},
+      {"name": "Voidforge"}
+    ]
+  },
+  "atziri": {
+    "name": "defeat atziri",
+    "id": 41310,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "The Vertex"},
+      {"name": "Atziri's Splendour"},
+      {"name": "Atziri's Rule"},
+      {"name": "Triumvirate Authority"},
+      {"name": "Atziri's Acuity"},
+      {"name": "Atziri's Reflection"},
+      {"name": "Atziri's Disfavour"}
+    ]
+  },
+  "al-hezmin": {
+    "name": "defeat al-hezmin",
+    "id": 41311,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Al-Hezmin's Crest"}
+    ]
+  },
+  "baran": {
+    "name": "defeat baran",
+    "id": 41312,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Baran's Crest"}
+    ]
+  },
+  "drox": {
+    "name": "defeat drox",
+    "id": 41313,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Drox's Crest"}
+    ]
+  },
+  "veritania": {
+    "name": "defeat veritania",
+    "id": 41314,
+    "difficulty": "Guardian",
+    "drops": [
+      {"name": "Veritania's Crest"}
+    ]
+  },
+  "sirus": {
+    "name": "defeat sirus",
+    "id": 41315,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Crown of the Inward Eye"},
+      {"name": "Hands of the High Templar"},
+      {"name": "The Burden of Truth"},
+      {"name": "Thread of Hope"}
+    ]
+  },
+  "uber_sirus": {
+    "name": "defeat uber_sirus",
+    "id": 41316,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "Thread of Hope", "ilvl": 87},
+      {"name": "The Tempest Rising"},
+      {"name": "Oriath's End"},
+      {"name": "The Saviour"}
+    ]
+  },
+  "maven": {
+    "name": "defeat maven",
+    "id": 41317,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Legacy of Fury"},
+      {"name": "Graven's Secret"},
+      {"name": "Arn's Anguish"},
+      {"name": "Olesya's Delight"},
+      {"name": "Doppelgänger Guise"},
+      {"name": "Echoforge"}
+    ]
+  },
+  "uber_maven": {
+    "name": "defeat uber_maven",
+    "id": 41318,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "Viridi's Veil"},
+      {"name": "Impossible Escape"},
+      {"name": "Grace of the Goddess"},
+      {"name": "Progenesis"}
+    ]
+  },
+  "exarch": {
+    "name": "defeat exarch",
+    "id": 41319,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Dawnbreaker"},
+      {"name": "Dawnstrider"},
+      {"name": "Dissolution of the Flesh"}
+    ]
+  },
+  "uber_exarch": {
+    "name": "defeat uber_exarch",
+    "id": 41320,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "The Annihilating Light"},
+      {"name": "Annihilation's Approach"},
+      {"name": "Crystallised Omniscience"},
+      {"name": "The Celestial Brace"}
+    ]
+  },
+  "eater": {
+    "name": "defeat eater",
+    "id": 41321,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Inextricable Fate"},
+      {"name": "The Gluttonous Tide"},
+      {"name": "Melding of the Flesh"}
+    ]
+  },
+  "uber_eater": {
+    "name": "defeat uber_eater",
+    "id": 41322,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "Ravenous Passion"},
+      {"name": "Ashes of the Stars"},
+      {"name": "Nimis"}
+    ]
+  },
+  "incarnation_of_neglect": {
+    "name": "defeat incarnation_of_neglect",
+    "id": 41323,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "The Arkhon's Tools"},
+      {"name": "Venarius' Astrolabe"},
+      {"name": "Legacy of the Rose"}
+    ]
+  },
+  "incarnation_of_fear": {
+    "name": "defeat incarnation_of_fear",
+    "id": 41324,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Servant of Decay"},
+      {"name": "Coiling Whisper"},
+      {"name": "Enmity's Embrace"}
+    ]
+  },
+  "incarnation_of_dread": {
+    "name": "defeat incarnation_of_dread",
+    "id": 41325,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "The Dark Monarch"},
+      {"name": "Seven Teachings"},
+      {"name": "Wine of the Prophet"}
+    ]
+  },
+  "cortex": {
+    "name": "defeat cortex",
+    "id": 41326,
+    "difficulty": "Pinnacle",
+    "drops": [
+      {"name": "Offering to the Serpent"},
+      {"name": "Perepiteia"},
+      {"name": "Garb of the Ephemeral"},
+      {"name": "Bottled Faith"}
+    ]
+  },
+  "uber_cortex": {
+    "name": "defeat uber_cortex",
+    "id": 41327,
+    "difficulty": "Uber",
+    "drops": [
+      {"name": "Mask of the Tribunal"},
+      {"name": "Nebulis"},
+      {"name": "Circle of Ambition"},
+      {"name": "The Apostate"},
+      {"name": "Rational Doctrine"}
+    ]
+  }
+}
