@@ -14,6 +14,31 @@ function jinglesSourceDir(): string {
     : path.join(process.resourcesPath, 'sounds', 'jingles')
 }
 
+function randomSoundsSourceDir(): string {
+  return process.env.NODE_ENV === 'development'
+    ? path.resolve(__dirname, '../../resources/sounds/random')
+    : path.join(process.resourcesPath, 'sounds', 'random')
+}
+
+const RANDOM_SOUND_DIR_NAME = '_ap_random'
+
+/**
+ * Copy random wav files into `{docDir}/_ap_random/` if not already present.
+ * Returns the destination directory path.
+ */
+export function ensureRandomSounds(docDir: string): string {
+  const dest = path.join(docDir, RANDOM_SOUND_DIR_NAME)
+  fs.mkdirSync(dest, { recursive: true })
+  const src = randomSoundsSourceDir()
+  if (fs.existsSync(src)) {
+    for (const f of fs.readdirSync(src).filter(n => n.toLowerCase().endsWith('.wav'))) {
+      const dstFile = path.join(dest, f)
+      if (!fs.existsSync(dstFile)) fs.copyFileSync(path.join(src, f), dstFile)
+    }
+  }
+  return dest
+}
+
 const JINGLE_DIR_NAME = '_ap_jingle'
 const JINGLE_FILES = ['Progression.wav', 'Useful.wav', 'Filler.wav', 'Trap.wav', 'ProgUseful.wav']
 

@@ -12,7 +12,7 @@ function registerApAssetsProtocol(): void {
   protocol.handle('ap-assets', (request) => {
     const reqUrl  = new URL(request.url)
     const relPath = decodeURIComponent(reqUrl.pathname)
-    const imgRoot = path.resolve(__dirname, '../../../../pathofexile_ap/images')
+    const imgRoot = path.resolve(__dirname, '../../resources/images')
     const fullPath = path.join(imgRoot, relPath)
     return net.fetch(url.pathToFileURL(fullPath).toString())
   })
@@ -64,10 +64,10 @@ app.whenReady().then(async () => {
     clientTxtWatcher.start(s.clientTxtPath)
   }
 
-  // F12 global hotkey for revalidate
-  globalShortcut.register('F12', () => {
+  const hotkeyOk = globalShortcut.register('Ctrl+F12', () => {
     mainWindow?.webContents.send('hotkey:revalidate')
   })
+  if (!hotkeyOk) logger.warn('[main] Ctrl+F12 hotkey failed to register — key already claimed by another app')
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

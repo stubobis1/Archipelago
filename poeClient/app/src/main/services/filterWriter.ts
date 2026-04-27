@@ -92,6 +92,7 @@ export interface FilterWriteOptions {
   display:            FilterDisplay
   sound:              FilterSound
   soundDir?:          string
+  randomSoundFiles?:  string[]
 }
 
 /**
@@ -99,7 +100,7 @@ export interface FilterWriteOptions {
  * Returns the paths and block/size stats for the AP filter.
  */
 export function writeFilters(opts: FilterWriteOptions): { apPath: string; invalidPath: string; blocks: number; sizeKB: number } {
-  const { docDir, uncheckedBaseItems, baseFilter, display, sound, soundDir = '' } = opts
+  const { docDir, uncheckedBaseItems, baseFilter, display, sound, soundDir = '', randomSoundFiles = [] } = opts
 
   const apBlocks = uncheckedBaseItems.flatMap(({ baseItem, flags }) => {
     if (display === 1) return []  // hide mode — emit nothing
@@ -114,12 +115,16 @@ export function writeFilters(opts: FilterWriteOptions): { apPath: string; invali
     const lines = ['Show', `BaseType == "${baseItem}"`, ...styleLines]
     if (sound === 2 && soundDir) {
       lines.push(`CustomAlertSoundOptional "${path.join(soundDir, `${soundClass}.wav`).replace(/\\/g, '/')}" 300`)
+    } else if (sound === 3 && randomSoundFiles.length > 0) {
+      lines.push(`CustomAlertSoundOptional "${rp(randomSoundFiles).replace(/\\/g, '/')}" 300`)
     }
     lines.push('')
     return [lines.join('\n')]
   })
 
-  if (baseFilter) apBlocks.push(`Import "${baseFilter}"`)
+  if (baseFilter) {
+    apBlocks.push(`Import "${baseFilter}" Optional`)
+  }
 
   const apContent = apBlocks.join('\n')
   const apPath    = filterPath(docDir, AP_FILTER)

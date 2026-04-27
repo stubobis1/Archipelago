@@ -55,11 +55,9 @@ function createAPSocket() {
         }
       })
 
-      let _slotData: any = null
       client.socket.on('receivedPacket', (pkt: any) => {
         logger.debug('[AP] packet:', pkt?.cmd)
         if (pkt?.cmd === 'RoomInfo') _seedName = pkt.seed_name ?? ''
-        if (pkt?.cmd === 'Connected') _slotData = pkt.slot_data ?? null
         if (pkt?.cmd === 'Bounced' && Array.isArray(pkt?.tags) && pkt.tags.includes('DeathLink')) {
           emit({ type: 'deathlink', source: pkt?.data?.source ?? '' })
         }
@@ -69,7 +67,9 @@ function createAPSocket() {
         logger.error('[AP] InvalidPacket:', JSON.stringify(pkt))
       })
 
-      client.socket.on('connected', () => {
+      // `connected` fires before `receivedPacket` for the Connected packet, so read
+      // slot_data directly from the packet arg rather than caching it in receivedPacket.
+      client.socket.on('connected', (packet: any) => {
         logger.info('[AP] socket connected (authenticated)')
         _connected = true
 
@@ -79,18 +79,20 @@ function createAPSocket() {
           .map((p: any) => p.alias as string)
 
         logger.info(`[AP] players in room: ${players.join(', ')}`)
-        emit({ type: 'connected', slot: slotName, players, slotData: _slotData, seedName: _seedName })
+        emit({ type: 'connected', slot: slotName, players, slotData: packet?.slot_data ?? null, seedName: _seedName })
 
-        // Scout missing locations for item flag data (used in filter classification)
-        const missing: number[] = client.room?.missingLocations ?? []
-        if (missing.length > 0) {
-          client.scout(missing, 0)
-            .then((items: any[]) => {
-              _locationFlags = new Map(items.map((i: any) => [i.locationId, i.flags]))
-              logger.info(`[AP] scouted ${items.length} locations for filter flags`)
-            })
-            .catch((e: any) => logger.warn('[AP] location scout failed:', e?.message))
-        }
+        // Defer one tick: archipelago.js auth flag not set until after this event fires
+        setTimeout(() => {
+          const missing: number[] = client?.room?.missingLocations ?? []
+          if (missing.length > 0) {
+            client.scout(missing, 0)
+              .then((items: any[]) => {
+                _locationFlags = new Map(items.map((i: any) => [i.locationId, i.flags]))
+                logger.info(`[AP] scouted ${items.length} locations for filter flags`)
+              })
+              .catch((e: any) => logger.warn('[AP] location scout failed:', e?.message))
+          }
+        }, 0)
       })
 
       client.socket.on('disconnected', () => {
@@ -107,9 +109,10 @@ function createAPSocket() {
         emit({ type: 'locationsChecked', ids })
       })
 
-      client.items.on('itemsReceived', (items: any[]) => {
-        logger.info(`[AP] received ${items.length} item(s)`)
-        for (const item of items) {
+      client.items.on('itemsReceived', (items: any[], startingIndex: number) => {
+        logger.info(`[AP] received ${items.length} item(s) starting at index ${startingIndex}`)
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
           emit({
             type: 'item',
             item: {
@@ -118,7 +121,7 @@ function createAPSocket() {
               classification: '',
               category:       [],
               from:           item.sender?.alias ?? 'Unknown',
-              index:          item.index ?? 0,
+              index:          startingIndex + i,
             },
           })
         }

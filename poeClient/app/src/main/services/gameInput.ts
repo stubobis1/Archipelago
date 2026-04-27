@@ -66,12 +66,14 @@ async function sendSequenceWin(command: string): Promise<void> {
   const escaped = command.replace(/'/g, "''")
   const script = [
     `$sh = New-Object -ComObject WScript.Shell`,
+    `$prev = Get-Clipboard -Raw`,
     `$sh.SendKeys('{ENTER}')`,
     `Start-Sleep -Milliseconds ${delayEnter}`,
     `Set-Clipboard -Value '${escaped}'`,
     `$sh.SendKeys('^v')`,
     `Start-Sleep -Milliseconds ${delayPaste}`,
     `$sh.SendKeys('{ENTER}')`,
+    `try { if ($prev) { Set-Clipboard -Value $prev } } catch {}`,
   ].join('; ')
   await execFileAsync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { timeout: 8000 })
 }
@@ -81,6 +83,7 @@ async function sendSequenceLinux(command: string): Promise<void> {
   const display = xDisplay()
   const env     = { ...process.env, DISPLAY: display }
   const delay   = (ms: number) => new Promise(r => setTimeout(r, Math.max(ms, 50)))
+  const prev = clipboard.readText()
   clipboard.writeText(command)
   // Enter opens chat, ctrl+v pastes, Enter submits
   await execFileAsync('xdotool', ['key', '--clearmodifiers', 'Return'],   { timeout: 3000, env })
@@ -88,6 +91,7 @@ async function sendSequenceLinux(command: string): Promise<void> {
   await execFileAsync('xdotool', ['key', '--clearmodifiers', 'ctrl+v'],   { timeout: 3000, env })
   await delay(s.inputDelayEnter ?? 0)
   await execFileAsync('xdotool', ['key', '--clearmodifiers', 'Return'],   { timeout: 3000, env })
+  clipboard.writeText(prev)
 }
 
 /** Send one command, assuming PoE is already focused. Debounced to prevent double-sends. */
@@ -172,6 +176,14 @@ export async function openChatAndSend(command: string): Promise<boolean> {
 export function queueChatSend(command: string, maxTries = 60): Promise<boolean> {
   logger.info(`[gameInput] queued: "${command}" (max ${maxTries} retries)`)
   return new Promise(resolve => {
+    if (command.startsWith('/itemfilter')) {
+      // Drop older /itemfilter entries; only most-recent matters
+      const dropped = queue.filter(i => i.command.startsWith('/itemfilter'))
+      dropped.forEach(i => i.resolve(false))
+      const keep = queue.filter(i => !i.command.startsWith('/itemfilter'))
+      queue.length = 0
+      queue.push(...keep)
+    }
     queue.push({ command, maxTries, tries: 0, resolve })
     startRetryLoop()
   })

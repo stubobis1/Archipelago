@@ -3,7 +3,7 @@
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 export type OAuthStatus = 'none' | 'pending' | 'valid' | 'expired'
 export type FilterDisplay = 0 | 1 | 2 | 3  // show / hide / randomize / uniform
-export type FilterSound  = 0 | 1 | 2  // none / tts / jingle
+export type FilterSound  = 0 | 1 | 2 | 3  // none / tts / jingle / random
 
 export interface Settings {
   // Paths
@@ -137,10 +137,10 @@ export interface ChatMessage {
 }
 
 export interface GoalState {
-  type:    number   // from Options.Goal
-  bosses?: string[] // for defeat_bosses goal
+  type:     number    // from Options.Goal
+  bosses?:  string[]  // for defeat_bosses goal
   defeated: string[]
-  actZoneReached?: number
+  eligible: boolean   // conditions met; user may click Send Goal
   complete: boolean
 }
 
@@ -167,6 +167,7 @@ export interface AppState {
   oauthAccount: string | null
   oauthDaysLeft: string | null
   char:        CharacterData | null
+  charName:    string | null
   zone:        string
   clientTxtOk:       boolean
   clientTxtPathOk:   boolean
@@ -211,3 +212,4 @@ export type IpcAction =
   | { type: 'exportConfigZip' }
   | { type: 'deleteConfigData' }
   | { type: 'requestFullState' }
+  | { type: 'sendGoal' }

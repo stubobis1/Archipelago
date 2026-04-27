@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store'
+import type { Settings } from '@shared/types'
+import { PathInput } from '../components/PathInput'
 
 const STEPS = [
   { n: 1, label: 'Paths'     },
@@ -9,35 +11,11 @@ const STEPS = [
   { n: 5, label: 'Ready'     },
 ]
 
-function usePathValid(p: string, action: (a: any) => Promise<unknown>): boolean | null {
-  const [valid, setValid] = useState<boolean | null>(null)
-  useEffect(() => {
-    if (!p) { setValid(null); return }
-    setValid(null)
-    const t = setTimeout(() => {
-      action({ type: 'checkPath', path: p }).then(r => setValid(r as boolean))
-    }, 300)
-    return () => clearTimeout(t)
-  }, [p])
-  return valid
-}
-
-function PathStatus({ valid }: { valid: boolean | null }) {
-  if (valid === null) return null
-  return valid
-    ? <span style={{ color: 'var(--ok)', fontSize: 16, lineHeight: 1 }}>✓</span>
-    : <span style={{ color: 'var(--err)', fontSize: 16, lineHeight: 1 }}>✗</span>
-}
-
 function Step1Paths({ onNext }: { onNext: () => void }) {
   const action = useStore(s => s.action)
   const [clientTxt, setClientTxt] = useState('')
   const [docPath, setDocPath]     = useState('')
   const [filter, setFilter]       = useState('')
-
-  const clientOk = usePathValid(clientTxt, action)
-  const docOk    = usePathValid(docPath, action)
-  const filterOk = usePathValid(filter, action)
 
   useEffect(() => {
     action({ type: 'getDefaultPaths' }).then((res: any) => {
@@ -47,59 +25,49 @@ function Step1Paths({ onNext }: { onNext: () => void }) {
     })
   }, [])
 
-  async function browse(mode: 'file' | 'folder', title: string, set: (v: string) => void, defaultPath?: string) {
-    const res = await action({ type: 'browsePath', mode, title, defaultPath }) as string | null
-    if (res) set(res)
+  function savePath(key: keyof Settings, value: string) {
+    if (value) action({ type: 'saveSetting', key, value })
   }
 
-  function save() {
-    if (clientTxt) action({ type: 'saveSetting', key: 'clientTxtPath',  value: clientTxt })
-    if (docPath)   action({ type: 'saveSetting', key: 'poeDocPath',     value: docPath })
-    if (filter)    action({ type: 'saveSetting', key: 'baseItemFilter', value: filter })
+  function saveAll() {
+    savePath('clientTxtPath', clientTxt)
+    savePath('poeDocPath', docPath)
+    savePath('baseItemFilter', filter)
     onNext()
   }
 
   return (
     <div style={{ maxWidth: 640, display: 'grid', gap: 20 }}>
-      <div>
-        <label className="label">Client.txt path</label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input className="input mono" value={clientTxt} onChange={e => setClientTxt(e.target.value)}
-            placeholder="C:\Games\Path of Exile\logs\Client.txt" />
-          <PathStatus valid={clientOk} />
-          <button className="btn" onClick={() => browse('file', 'Select Client.txt', setClientTxt, clientTxt || undefined)}>Browse</button>
-        </div>
-      </div>
-      <div>
-        <label className="label">PoE documents folder</label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input className="input mono" value={docPath} onChange={e => setDocPath(e.target.value)}
-            placeholder="C:\Users\you\Documents\My Games\Path of Exile\" />
-          <PathStatus valid={docOk} />
-          <button className="btn" onClick={() => browse('folder', 'Select PoE documents folder', setDocPath, docPath || undefined)}>Browse</button>
-        </div>
-      </div>
-      <div>
-        <label className="label">Base item filter <span className="muted mono" style={{ fontSize: 10, textTransform: 'none' }}>optional</span></label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input className="input mono" value={filter} onChange={e => setFilter(e.target.value)}
-            placeholder="C:\Users\you\Documents\My Games\Path of Exile\Neversink.filter" />
-          <PathStatus valid={filterOk} />
-          <button className="btn" onClick={async () => {
-            const res = await action({
-              type: 'browsePath', mode: 'file', title: 'Select base item filter',
-              defaultPath: docPath || undefined,
-            }) as string | null
-            if (res) setFilter(res)
-          }}>Browse</button>
-        </div>
-        <div className="muted mono" style={{ fontSize: 10.5, marginTop: 6 }}>
-          Path to an existing filter file. The AP filter will chain-import it.
-        </div>
-      </div>
+      <PathInput
+        label="Client.txt path"
+        value={clientTxt} onChange={setClientTxt}
+        onBlur={v => savePath('clientTxtPath', v)}
+        placeholder="C:\Games\Path of Exile\logs\Client.txt"
+        mode="file" browseTitle="Select Client.txt"
+        browseDefaultPath={clientTxt || undefined}
+      />
+      <PathInput
+        label="PoE documents folder"
+        value={docPath} onChange={setDocPath}
+        onBlur={v => savePath('poeDocPath', v)}
+        placeholder="C:\Users\you\Documents\My Games\Path of Exile\"
+        mode="folder" browseTitle="Select PoE documents folder"
+        browseDefaultPath={docPath || undefined}
+      />
+      <PathInput
+        label={<>Base item filter <span className="muted mono" style={{ fontSize: 10, textTransform: 'none' }}>optional</span></>}
+        value={filter} onChange={setFilter}
+        onBlur={v => savePath('baseItemFilter', v)}
+        placeholder="Neversink.filter"
+        mode="file" browseTitle="Select base item filter"
+        browseDefaultPath={docPath || undefined}
+        validateAs={filter && docPath ? `${docPath}\\${filter}` : ''}
+        filenameOnly
+        note="Path to an existing filter file. The AP filter will chain-import it."
+      />
       <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
         <div className="spacer" />
-        <button className="btn primary" onClick={save}>Next →</button>
+        <button className="btn primary" onClick={saveAll}>Next →</button>
       </div>
     </div>
   )

@@ -14,6 +14,7 @@ const INITIAL: AppState = {
   oauthAccount:    null,
   oauthDaysLeft:   null,
   char:            null,
+  charName:        null,
   zone:            '',
   clientTxtOk:     false,
   clientTxtPathOk: false,

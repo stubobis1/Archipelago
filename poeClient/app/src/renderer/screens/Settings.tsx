@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../store'
 import type { Settings } from '@shared/types'
+import { PathInput } from '../components/PathInput'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -34,25 +35,6 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   )
 }
 
-function PathStatus({ valid }: { valid: boolean | null }) {
-  if (valid === null) return null
-  return valid
-    ? <span style={{ color: 'var(--ok)', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>✓</span>
-    : <span style={{ color: 'var(--err)', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>✗</span>
-}
-
-function usePathValid(p: string): boolean | null {
-  const action = useStore(s => s.action)
-  const [valid, setValid] = useState<boolean | null>(null)
-  useEffect(() => {
-    if (!p) { setValid(null); return }
-    const t = setTimeout(() => {
-      action({ type: 'checkPath', path: p }).then(r => setValid(r as boolean))
-    }, 300)
-    return () => clearTimeout(t)
-  }, [p])
-  return valid
-}
 
 export function SettingsScreen() {
   const action = useStore(s => s.action)
@@ -88,20 +70,6 @@ export function SettingsScreen() {
     })
   }, [])
 
-  const clientOk    = usePathValid(paths.clientTxt)
-  const docOk       = usePathValid(paths.docPath)
-  const baseFilterOk = usePathValid(
-    paths.baseFilter && paths.docPath ? `${paths.docPath}\\${paths.baseFilter}.filter` : ''
-  )
-
-  async function browse(mode: 'file' | 'folder', title: string, current: string, set: (v: string) => void, saveKey: keyof Settings) {
-    const res = await action({ type: 'browsePath', mode, title, defaultPath: current || undefined }) as string | null
-    if (res) {
-      set(res)
-      action({ type: 'saveSetting', key: saveKey, value: res })
-    }
-  }
-
   return (
     <div style={{ flex: 1, overflow: 'auto' }}>
       <div className="page-header">
@@ -113,43 +81,36 @@ export function SettingsScreen() {
 
         <Section title="Paths">
           <Row label="Client.txt" note="PoE log file; tailed for zone changes, deaths, and chat commands.">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input className="input mono" style={{ flex: 1 }} value={paths.clientTxt}
-                onChange={e => setPaths(p => ({ ...p, clientTxt: e.target.value }))}
-                onBlur={() => save('clientTxtPath')(paths.clientTxt)}
-                placeholder="C:\Games\Path of Exile\logs\Client.txt" />
-              <PathStatus valid={clientOk} />
-              <button className="btn" onClick={() => browse('file', 'Select Client.txt', paths.clientTxt, v => setPaths(p => ({ ...p, clientTxt: v })), 'clientTxtPath')}>Browse</button>
-            </div>
+            <PathInput
+              label="" value={paths.clientTxt}
+              onChange={v => setPaths(p => ({ ...p, clientTxt: v }))}
+              onBlur={v => save('clientTxtPath')(v)}
+              placeholder="C:\Games\Path of Exile\logs\Client.txt"
+              mode="file" browseTitle="Select Client.txt"
+              browseDefaultPath={paths.clientTxt || undefined}
+            />
           </Row>
           <Row label="PoE Documents folder" note="Where __ap.filter will be written.">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input className="input mono" style={{ flex: 1 }} value={paths.docPath}
-                onChange={e => setPaths(p => ({ ...p, docPath: e.target.value }))}
-                onBlur={() => save('poeDocPath')(paths.docPath)}
-                placeholder="C:\Users\you\Documents\My Games\Path of Exile\" />
-              <PathStatus valid={docOk} />
-              <button className="btn" onClick={() => browse('folder', 'Select PoE documents folder', paths.docPath, v => setPaths(p => ({ ...p, docPath: v })), 'poeDocPath')}>Browse</button>
-            </div>
+            <PathInput
+              label="" value={paths.docPath}
+              onChange={v => setPaths(p => ({ ...p, docPath: v }))}
+              onBlur={v => save('poeDocPath')(v)}
+              placeholder="C:\Users\you\Documents\My Games\Path of Exile\"
+              mode="folder" browseTitle="Select PoE documents folder"
+              browseDefaultPath={paths.docPath || undefined}
+            />
           </Row>
           <Row label="Base item filter" note="Filter name to chain imports from (optional). The AP filter wraps it.">
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input className="input" style={{ flex: 1 }} value={paths.baseFilter}
-                onChange={e => setPaths(p => ({ ...p, baseFilter: e.target.value }))}
-                onBlur={() => save('baseItemFilter')(paths.baseFilter)}
-                placeholder="Neversink" />
-              <PathStatus valid={baseFilterOk} />
-              <button className="btn" onClick={async () => {
-                const startDir = paths.docPath || undefined
-                const res = await action({ type: 'browsePath', mode: 'file', title: 'Select base filter', defaultPath: startDir }) as string | null
-                if (res) {
-                  // Store just the name without extension
-                  const name = res.replace(/\.filter$/i, '').split(/[\\/]/).pop() ?? res
-                  setPaths(p => ({ ...p, baseFilter: name }))
-                  action({ type: 'saveSetting', key: 'baseItemFilter', value: name })
-                }
-              }}>Browse</button>
-            </div>
+            <PathInput
+              label="" value={paths.baseFilter}
+              onChange={v => setPaths(p => ({ ...p, baseFilter: v }))}
+              onBlur={v => save('baseItemFilter')(v)}
+              placeholder="Neversink.filter"
+              mode="file" browseTitle="Select base filter"
+              browseDefaultPath={paths.docPath || undefined}
+              validateAs={paths.baseFilter && paths.docPath ? `${paths.docPath}\\${paths.baseFilter}` : ''}
+              filenameOnly
+            />
           </Row>
         </Section>
 
@@ -218,7 +179,7 @@ export function SettingsScreen() {
           </Row>
           <Row label="Sound mode" note="Alert sounds for AP items.">
             <div className="seg" style={{ fontSize: 11.5 }}>
-              {([['None',0],['Jingles',2]] as [string,number][]).map(([lbl,v]) => (
+              {([['None',0],['Jingles',2],['Random',3]] as [string,number][]).map(([lbl,v]) => (
                 <div key={v} className={`opt${filterSound===v?' active':''}`} onClick={() => { setFilterSound(v); save('filterSound')(v) }}>{lbl}</div>
               ))}
             </div>

@@ -4,7 +4,7 @@ import type { ChatMessage } from '@shared/types'
 
 
 function StatusStrip() {
-  const { connection, serverAddr, slotName, char, zone, goal } = useStore()
+  const { connection, serverAddr, slotName, char, charName, zone, goal } = useStore()
   const action = useStore(s => s.action)
   const [addr, setAddr] = useState(serverAddr || '')
   const [slot, setSlot] = useState(slotName || '')
@@ -29,6 +29,8 @@ function StatusStrip() {
                 <span style={{ fontFamily: 'var(--display)', fontSize: 20, lineHeight: 1 }}>{char.name}</span>
                 <span className="mono muted" style={{ fontSize: 11 }}>{char.class} · lv {char.level}{zone ? ` · ${zone}` : ''}</span>
               </>
+            : charName
+            ? <span style={{ fontFamily: 'var(--display)', fontSize: 20, lineHeight: 1, color: 'var(--ink-3)' }}>{charName}</span>
             : <span className="muted mono" style={{ fontSize: 11 }}>no character loaded</span>
           }
         </div>
@@ -125,7 +127,7 @@ function StatusDot({ ok, label }: { ok: boolean; label: string }) {
 }
 
 function ItemsPanel() {
-  const { items, char, goal, errors, clientTxtOk, clientTxtPathOk, filterOk, connection } = useStore()
+  const { items, char, goal, errors, clientTxtOk, clientTxtPathOk, filterOk, connection, oauthStatus, oauthDaysLeft } = useStore()
   const action = useStore(s => s.action)
 
   const byCategory = (cat: string) => items.filter(i => i.category?.includes(cat)).length
@@ -149,6 +151,7 @@ function ItemsPanel() {
             <StatusDot ok={filterOk}               label="Filter" />
             <StatusDot ok={connection === 'connected'} label="AP server" />
             <StatusDot ok={!!char}                 label="Character" />
+            <StatusDot ok={oauthStatus === 'valid'} label={oauthStatus === 'valid' && oauthDaysLeft ? `GGG API · ${oauthDaysLeft}` : 'GGG API'} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0 4px', borderTop: '1px solid var(--rule)' }}>
             <span style={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0, display: 'inline-block',
