@@ -1,6 +1,7 @@
 import { clipboard } from 'electron'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import * as fs from 'fs'
 import { settingsService } from './settings'
 import { logger } from './logger'
 
@@ -10,6 +11,15 @@ export const DEBOUNCE_MS = 1000
 let lastSendMs = 0
 
 // ── Focus check ──────────────────────────────────────────────────────────────
+
+function xDisplay(): string {
+  if (process.env.DISPLAY) return process.env.DISPLAY
+  try {
+    const sockets = fs.readdirSync('/tmp/.X11-unix').filter(f => /^X\d+$/.test(f))
+    if (sockets.length > 0) return `:${sockets[0].slice(1)}`
+  } catch {}
+  return ':1'
+}
 
 async function getForegroundTitle(): Promise<string> {
   if (process.platform === 'win32') {
@@ -23,13 +33,14 @@ async function getForegroundTitle(): Promise<string> {
     const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { timeout: 4000 })
     return stdout.trim()
   }
-  try {
-    const { default: activeWin } = await import('active-win')
-    const win = await (activeWin as any)()
-    return win?.title ?? ''
-  } catch {
-    return ''
-  }
+  // Linux: xprop on XWayland display (PoE/Proton runs in XWayland)
+  const display = xDisplay()
+  const env = { ...process.env, DISPLAY: display }
+  const { stdout: rootOut } = await execFileAsync('xprop', ['-display', display, '-root', '_NET_ACTIVE_WINDOW'], { timeout: 2000, env })
+  const winId = rootOut.match(/0x[0-9a-f]+/i)?.[0]
+  if (!winId) return ''
+  const { stdout: nameOut } = await execFileAsync('xprop', ['-display', display, '-id', winId, 'WM_NAME', '_NET_WM_NAME'], { timeout: 2000, env })
+  return nameOut.match(/"(.+)"/)?.[1] ?? ''
 }
 
 /** Returns `true` if Path of Exile is the foreground window (or focus check is bypassed). */
@@ -66,21 +77,17 @@ async function sendSequenceWin(command: string): Promise<void> {
 }
 
 async function sendSequenceLinux(command: string): Promise<void> {
-  try {
-    const { uIOhook, UiohookKey } = await import('uiohook-napi') as any
-    const tap = async (key: string, mods: string[] = []) => {
-      const k    = UiohookKey[key]
-      const modK = mods.map((m: string) => UiohookKey[m === 'ctrl' ? 'Ctrl' : m === 'shift' ? 'Shift' : 'Alt']).filter(Boolean)
-      if (k !== undefined) uIOhook.keyTap(k, modK)
-      await new Promise(r => setTimeout(r, 50))
-    }
-    clipboard.writeText(command)
-    await tap('Return')
-    await new Promise(r => setTimeout(r, 50))
-    await tap('V', ['ctrl'])
-    await new Promise(r => setTimeout(r, 50))
-    await tap('Return')
-  } catch { /* uiohook unavailable */ }
+  const s       = settingsService.get()
+  const display = xDisplay()
+  const env     = { ...process.env, DISPLAY: display }
+  const delay   = (ms: number) => new Promise(r => setTimeout(r, Math.max(ms, 50)))
+  clipboard.writeText(command)
+  // Enter opens chat, ctrl+v pastes, Enter submits
+  await execFileAsync('xdotool', ['key', '--clearmodifiers', 'Return'],   { timeout: 3000, env })
+  await delay(s.inputDelayPaste ?? 0)
+  await execFileAsync('xdotool', ['key', '--clearmodifiers', 'ctrl+v'],   { timeout: 3000, env })
+  await delay(s.inputDelayEnter ?? 0)
+  await execFileAsync('xdotool', ['key', '--clearmodifiers', 'Return'],   { timeout: 3000, env })
 }
 
 /** Send one command, assuming PoE is already focused. Debounced to prevent double-sends. */

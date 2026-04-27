@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol, net } from 'electron'
+import { app, BrowserWindow, protocol, net, globalShortcut } from 'electron'
 import * as path from 'path'
 import * as url from 'url'
 
@@ -65,17 +65,9 @@ app.whenReady().then(async () => {
   }
 
   // F12 global hotkey for revalidate
-  try {
-    const { uIOhook, UiohookKey } = await import('uiohook-napi') as any
-    uIOhook.on('keydown', (e: any) => {
-      if (e.keycode === UiohookKey.F12) {
-        mainWindow?.webContents.send('hotkey:revalidate')
-      }
-    })
-    uIOhook.start()
-  } catch {
-    // uiohook-napi not available
-  }
+  globalShortcut.register('F12', () => {
+    mainWindow?.webContents.send('hotkey:revalidate')
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

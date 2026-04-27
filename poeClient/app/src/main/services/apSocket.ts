@@ -180,6 +180,28 @@ function createAPSocket() {
       client.messages.say(`!hint ${itemName}`)
     },
 
+    /** Returns all missing locations as { id, name } pairs from the DataPackage reverse table. */
+    getMissingLocationsWithNames(): { id: number; name: string }[] {
+      if (!client || !_connected) return []
+      try {
+        const pkg = client.package.findPackage('Path of Exile')
+        if (!pkg) return []
+        const idToName: Record<number, string> = pkg.reverseLocationTable ?? {}
+        const missing: number[] = client.room?.missingLocations ?? []
+        return missing
+          .map(id => ({ id, name: idToName[id] ?? '' }))
+          .filter(({ name }) => !!name)
+      } catch { return [] }
+    },
+
+    /** Mark multiple locations as checked on the AP server. */
+    checkLocations(ids: number[]): void {
+      if (!client || !_connected || ids.length === 0) return
+      for (const id of ids) {
+        try { client.check(id) } catch {}
+      }
+    },
+
     /**
      * Returns base type names + item flags for all unchecked AP locations.
      * Used to generate the item filter — empty when disconnected.

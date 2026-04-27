@@ -15,7 +15,7 @@ import { openChatAndSend, queueChatSend } from './services/gameInput'
 import { apSocket } from './services/apSocket'
 import { getItems, getBaseItems, getBosses, ensureJingles } from './data'
 import { logger } from './services/logger'
-import { validateCharEquipment, validatePassivePoints, checkGoalZone, checkBossDrops } from './validation'
+import { validateCharEquipment, validatePassivePoints, checkGoalZone, checkBossDrops, toEquipArray } from './validation'
 
 // Per-world settings context — set on AP connect, reset on disconnect
 let _settingsSeed = ''
@@ -23,8 +23,19 @@ let _settingsUuid = ''
 let _settingsSlot = ''
 const sc = (): [string, string, string] => [_settingsSeed, _settingsUuid, _settingsSlot]
 
+// Game options from slot data — set on AP connect
+let _gameOpts: Record<string, any> = {}
+
+// Highest item index whispered so far — prevents re-whispering on reconnect replay
+let _highWaterIndex = -1
+
 // Token pending from !ap char self-whisper identification flow
 let _pendingCharToken: string | null = null
+
+// AP world version compatibility
+import poeVersion from '../../poe-version.json'
+const CLIENT_VERSION = poeVersion.clientVersion
+const BACKWARDS_COMPATIBLE_VERSIONS = new Set(poeVersion.backwardsCompatibleVersions)
 
 /** Mutable live state snapshot — updated by `patch()` and sent to the renderer on every change. */
 export let state: AppState = {
@@ -106,15 +117,16 @@ export function initIpc(): void {
   apSocket.on(ev => {
     if (ev.type === 'connected') {
       logger.info('AP connected as', ev.slot)
-      // Establish per-world settings context
+      // Establish per-world settings context (H-2: prefer server-side poe-uuid over OAuth UUID)
       _settingsSeed = ev.seedName
       _settingsSlot = ev.slot
-      _settingsUuid = settingsService.get().poeUuid ?? ''
+      _settingsUuid = ev.slotData?.['poe-uuid'] ?? settingsService.get().poeUuid ?? ''
       // Load world-specific settings overrides
       const ws = settingsService.get(...sc())
       patch({ deathlink: ws.deathlink, whisperUpdates: ws.whisperUpdates })
 
       const gameOpts = ev.slotData?.game_options ?? ev.slotData ?? {}
+      _gameOpts = gameOpts
       const goalType: number = gameOpts.goal ?? 0
       const bossesForGoal: string[] = gameOpts.bosses_for_goal ?? []
       const goalState = {
@@ -125,6 +137,21 @@ export function initIpc(): void {
       }
       patch({ connection: 'connected', slotName: ev.slot, goal: goalState })
       pushChat({ t: timestamp(), kind: 'sys', body: `Connected as "${ev.slot}" · Path of Exile` })
+
+      // H-3: version check
+      const generatedVersion: string = ev.slotData?.generated_version ?? ''
+      if (generatedVersion && generatedVersion !== CLIENT_VERSION) {
+        if (BACKWARDS_COMPATIBLE_VERSIONS.has(generatedVersion)) {
+          pushChat({ t: timestamp(), kind: 'sys', body: `Version mismatch (compatible): server=${generatedVersion} client=${CLIENT_VERSION}` })
+        } else {
+          pushChat({ t: timestamp(), kind: 'sys', body: `⚠ Version mismatch (INCOMPATIBLE): server=${generatedVersion} client=${CLIENT_VERSION} — this may cause issues!` })
+        }
+      }
+
+      // H-4: starting character hint from slot data
+      const startingChar: string = gameOpts.starting_character ?? ''
+      if (startingChar) pushChat({ t: timestamp(), kind: 'sys', body: `Starting character: ${startingChar}` })
+
       regenFilter()
     }
     if (ev.type === 'locationsChecked') {
@@ -137,22 +164,24 @@ export function initIpc(): void {
     }
     if (ev.type === 'item') {
       const item = ev.item
-      // Classify from local data
       const apItem = getItems().find(i => i.name === item.name)
       item.classification = apItem?.classification ?? 'Filler'
       item.category = apItem?.category ?? []
 
-      state.items = [...state.items, item]
-      patch({ items: state.items })
+      // Dedup: archipelago.js replays all items from index 0 on reconnect.
+      // Only whisper items with an index strictly above the high-water mark.
+      const isNew = item.index > _highWaterIndex
+      if (isNew) _highWaterIndex = item.index
 
-      if (state.whisperUpdates) {
-        pushChat({
-          t:    timestamp(),
-          kind: 'item',
-          body: `${item.name} from ${item.from}`,
-        })
+      const alreadyHave = state.items.some(i => i.index === item.index)
+      if (!alreadyHave) {
+        state.items = [...state.items, item]
+        patch({ items: state.items })
       }
 
+      if (isNew && state.whisperUpdates) {
+        pushChat({ t: timestamp(), kind: 'item', body: `${item.name} from ${item.from}` })
+      }
     }
     if (ev.type === 'chat') {
       pushChat({ t: timestamp(), kind: 'chat', body: ev.msg })
@@ -186,7 +215,14 @@ export function initIpc(): void {
     if (ev.type === 'zone') {
       patch({ zone: ev.zone })
       pushChat({ t: timestamp(), kind: 'sys', body: `You have entered ${ev.zone}` })
-      regenFilter()
+      if (apSocket.connected && state.connection === 'connected') {
+        handleZoneEntry(ev.zone).catch(e => {
+          logger.error('[zone] validation error:', e?.message)
+          regenFilter()
+        })
+      } else {
+        regenFilter()
+      }
 
       if (state.goal && !state.goal.complete) {
         // Zone-based goals
@@ -292,13 +328,22 @@ async function handleAction(action: IpcAction): Promise<unknown> {
       clearCharCache()
       const gggChar = await getCachedCharacter(charName, true)
       if (gggChar) {
-        const ctx = { receivedItems: state.items, gucciMode: 0 }
+        const ctx = {
+          receivedItems:        state.items,
+          gucciMode:            _gameOpts.gucciHobo            ?? 0,
+          passivePointsAsItems: _gameOpts.passivePointsAsItems !== false,
+        }
         const errs = [
           ...validateCharEquipment(gggChar, ctx),
           ...validatePassivePoints(gggChar, ctx),
         ]
         patch({ errors: errs })
-        regenFilter()
+        if (errs.length > 0) {
+          queueChatSend('/itemfilter __invalid')
+        } else {
+          regenFilter()
+          queueChatSend('/itemfilter __ap')
+        }
       }
       return null
     }
@@ -334,6 +379,9 @@ async function handleAction(action: IpcAction): Promise<unknown> {
 
     case 'saveSetting': {
       settingsService.set(action.key, action.value as never, ...sc())
+      // Infra keys are global — also write to default so per-world stores stay in sync
+      const GLOBAL_KEYS = new Set(['clientTxtPath', 'poeDocPath', 'baseItemFilter'])
+      if (GLOBAL_KEYS.has(action.key)) settingsService.set(action.key, action.value as never)
       if (action.key === 'clientTxtPath') {
         const p      = action.value as string
         const pathOk = !!(p && fs.existsSync(p))
@@ -365,21 +413,35 @@ async function handleAction(action: IpcAction): Promise<unknown> {
       const s2 = settingsService.get(...sc())
       const watchOk = s2.clientTxtPath ? clientTxtWatcher.start(s2.clientTxtPath) : false
       patch({ clientTxtOk: watchOk })
-      regenFilter()
-      pushChat({ t: timestamp(), kind: 'sys', body: 'Switch to Path of Exile — will send /itemfilter __ap when focused' })
-      queueChatSend('/itemfilter __ap')
+      regenFilter()  // always write the AP filter file first
+      pushChat({ t: timestamp(), kind: 'sys', body: 'Switch to Path of Exile — validating character before loading filter' })
       const charName = state.char?.name ?? settingsService.get().lastCharName
       if (charName) {
         clearCharCache()
         const gggChar = await getCachedCharacter(charName, true)
         if (gggChar) {
-          const ctx = { receivedItems: state.items, gucciMode: 0 }
+          patch({ char: gggChar as any })
+          const ctx = {
+            receivedItems:        state.items,
+            gucciMode:            _gameOpts.gucciHobo            ?? 0,
+            passivePointsAsItems: _gameOpts.passivePointsAsItems !== false,
+          }
           const errs = [
             ...validateCharEquipment(gggChar, ctx),
             ...validatePassivePoints(gggChar, ctx),
           ]
           patch({ errors: errs })
+          if (errs.length > 0) {
+            pushChat({ t: timestamp(), kind: 'sys', body: `Out of logic: ${errs.map(e => e.msg).join(', ')}` })
+            queueChatSend('/itemfilter __invalid')
+          } else {
+            queueChatSend('/itemfilter __ap')
+          }
+        } else {
+          queueChatSend('/itemfilter __ap')
         }
+      } else {
+        queueChatSend('/itemfilter __ap')
       }
       pushChat({ t: timestamp(), kind: 'sys', body: 'Monitoring started — filter loaded, gear validated' })
       return null
@@ -409,7 +471,12 @@ async function handleAction(action: IpcAction): Promise<unknown> {
     }
 
     case 'getDefaultPaths': {
-      return { clientTxt: findClientTxt(), docPath: findDocPath() }
+      const saved = settingsService.get()
+      return {
+        clientTxt:      saved.clientTxtPath  || findClientTxt(),
+        docPath:        saved.poeDocPath     || findDocPath(),
+        baseItemFilter: saved.baseItemFilter || '',
+      }
     }
 
     case 'checkPath': {
@@ -505,6 +572,14 @@ function registryGet(key: string, value: string): string | null {
 }
 
 function findClientTxt(): string {
+  const home = os.homedir()
+
+  if (process.platform === 'linux') {
+    const p = path.join(home, '.local/share/Steam/steamapps/common/Path of Exile/logs/Client.txt')
+    if (fs.existsSync(p)) return p
+    return ''
+  }
+
   const regPath = registryGet('HKCU\\Software\\GrindingGearGames\\Path of Exile', 'InstallLocation')
   if (regPath) {
     const p = path.join(regPath, 'logs', 'Client.txt')
@@ -529,6 +604,13 @@ function findClientTxt(): string {
 
 function findDocPath(): string {
   const home = os.homedir()
+
+  if (process.platform === 'linux') {
+    const p = path.join(home, '.local/share/Steam/steamapps/compatdata/238960/pfx/drive_c/users/steamuser/Documents/My Games/Path of Exile')
+    if (fs.existsSync(p)) return p
+    return ''
+  }
+
   for (const base of [
     path.join(home, 'Documents'),
     path.join(home, 'OneDrive', 'Documents'),
@@ -537,6 +619,90 @@ function findDocPath(): string {
     if (fs.existsSync(p)) return p
   }
   return ''
+}
+
+/**
+ * Full zone-entry validation loop — mirrors Python validationLogic.when_enter_new_zone.
+ * Fetches char from GGG API, validates equipment + passives, checks base-item and
+ * level-up locations, then switches the active filter based on validation result.
+ */
+async function handleZoneEntry(_zone: string): Promise<void> {
+  const charName = state.char?.name ?? settingsService.get(...sc()).lastCharName ?? settingsService.get().lastCharName
+  if (!charName) {
+    pushChat({ t: timestamp(), kind: 'sys', body: 'Zone entered — no character set. Type !ap char in game to identify.' })
+    regenFilter()
+    return
+  }
+
+  let gggChar: any
+  try {
+    clearCharCache()
+    gggChar = await getCachedCharacter(charName, true)
+  } catch (e: any) {
+    logger.error('[zone] GGG API fetch failed:', e?.message)
+    pushChat({ t: timestamp(), kind: 'sys', body: `Zone validation: API fetch failed — ${e?.message}` })
+    regenFilter()
+    return
+  }
+  if (!gggChar) { regenFilter(); return }
+
+  patch({ char: gggChar as any })
+
+  const ctx = {
+    receivedItems:       state.items,
+    gucciMode:           _gameOpts.gucciHobo           ?? 0,
+    passivePointsAsItems: _gameOpts.passivePointsAsItems !== false,
+  }
+
+  const errs = [
+    ...validateCharEquipment(gggChar, ctx),
+    ...validatePassivePoints(gggChar, ctx),
+  ]
+  patch({ errors: errs })
+
+  // Build location check set
+  const missingWithNames = apSocket.getMissingLocationsWithNames()
+  const missingSet       = new Set(missingWithNames.map(l => l.id))
+  const locNameToBase    = locationNameToBase()
+
+  // location name → location ID for base-item locations
+  const baseItemToLocId = new Map<string, number>()
+  for (const { id, name } of missingWithNames) {
+    const baseItem = locNameToBase[name]
+    if (baseItem) baseItemToLocId.set(baseItem, id)
+  }
+
+  const toCheck = new Set<number>()
+
+  // Scan char inventory + equipment for held base items that match AP locations
+  const charInv: any[]   = Array.isArray((gggChar as any).inventory) ? (gggChar as any).inventory : []
+  const charEquip: any[] = toEquipArray(gggChar)
+  for (const item of [...charInv, ...charEquip]) {
+    const baseType: string = item.baseType ?? ''
+    const locId = baseItemToLocId.get(baseType)
+    if (locId !== undefined && missingSet.has(locId)) toCheck.add(locId)
+  }
+
+  // Level-up locations: "Reach Level N" for every level up to char.level
+  if (_gameOpts.add_leveling_up_to_location_pool !== false && gggChar.level) {
+    for (let level = 2; level <= gggChar.level; level++) {
+      const loc = missingWithNames.find(l => l.name === `Reach Level ${level}`)
+      if (loc) toCheck.add(loc.id)
+    }
+  }
+
+  if (errs.length > 0) {
+    const errorText = errs.map((e: any) => e.msg).join(', ')
+    pushChat({ t: timestamp(), kind: 'sys', body: `Out of logic: ${errorText}` })
+    queueChatSend('/itemfilter __invalid')
+  } else {
+    if (toCheck.size > 0) {
+      apSocket.checkLocations([...toCheck])
+      pushChat({ t: timestamp(), kind: 'sys', body: `Checked ${toCheck.size} new location(s)` })
+    }
+    regenFilter()
+    queueChatSend('/itemfilter __ap')
+  }
 }
 
 let _locationNameToBase: Record<string, string> | null = null
@@ -666,9 +832,11 @@ async function handleChatCommand(who: string, msg: string): Promise<void> {
     return
   }
 
-  // Only respond to messages from our own character (if known)
+  // Only respond to our own character's messages.
+  // When knownChar is null (pre-identification) reject everything — the token
+  // flow above is the only valid path and it already returned.
   const knownChar = state.char?.name ?? null
-  if (knownChar && who !== knownChar && who !== state.slotName) return
+  if (!knownChar || (who !== knownChar && who !== state.slotName)) return
 
   const cmd = trimmed.toLowerCase()
   const charLevel = state.char?.level

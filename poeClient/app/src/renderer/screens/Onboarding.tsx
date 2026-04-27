@@ -37,11 +37,13 @@ function Step1Paths({ onNext }: { onNext: () => void }) {
 
   const clientOk = usePathValid(clientTxt, action)
   const docOk    = usePathValid(docPath, action)
+  const filterOk = usePathValid(filter, action)
 
   useEffect(() => {
     action({ type: 'getDefaultPaths' }).then((res: any) => {
-      if (res?.clientTxt) setClientTxt(res.clientTxt)
-      if (res?.docPath)   setDocPath(res.docPath)
+      if (res?.clientTxt)       setClientTxt(res.clientTxt)
+      if (res?.docPath)         setDocPath(res.docPath)
+      if (res?.baseItemFilter)  setFilter(res.baseItemFilter)
     })
   }, [])
 
@@ -81,7 +83,8 @@ function Step1Paths({ onNext }: { onNext: () => void }) {
         <label className="label">Base item filter <span className="muted mono" style={{ fontSize: 10, textTransform: 'none' }}>optional</span></label>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input className="input mono" value={filter} onChange={e => setFilter(e.target.value)}
-            placeholder="Neversink" />
+            placeholder="C:\Users\you\Documents\My Games\Path of Exile\Neversink.filter" />
+          <PathStatus valid={filterOk} />
           <button className="btn" onClick={async () => {
             const res = await action({
               type: 'browsePath', mode: 'file', title: 'Select base item filter',
@@ -91,7 +94,7 @@ function Step1Paths({ onNext }: { onNext: () => void }) {
           }}>Browse</button>
         </div>
         <div className="muted mono" style={{ fontSize: 10.5, marginTop: 6 }}>
-          Name of an existing filter to chain imports from (the AP filter will wrap it).
+          Path to an existing filter file. The AP filter will chain-import it.
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
@@ -371,7 +374,7 @@ function Step4Character({ onNext }: { onNext: () => void }) {
 }
 
 function Step5Ready({ onDone }: { onDone: () => void }) {
-  const { connection, oauthStatus, clientTxtOk, filterOk } = useStore()
+  const { connection, oauthStatus, clientTxtOk, clientTxtPathOk, filterOk } = useStore()
   const action = useStore(s => s.action)
   return (
     <div style={{ maxWidth: 640, display: 'grid', gap: 20 }}>
@@ -393,8 +396,8 @@ function Step5Ready({ onDone }: { onDone: () => void }) {
         </div>
         <div className="card" style={{ padding: '12px 14px' }}>
           <div className="muted mono" style={{ fontSize: 10.5, marginBottom: 4 }}>Client.txt</div>
-          <span className={`pill ${clientTxtOk ? 'ok' : ''}`}>
-            <span className="dot" />{clientTxtOk ? 'tailing' : 'not found'}
+          <span className={`pill ${clientTxtOk || clientTxtPathOk ? 'ok' : ''}`}>
+            <span className="dot" />{clientTxtOk ? 'tailing' : clientTxtPathOk ? 'path set' : 'not found'}
           </span>
         </div>
         <div className="card" style={{ padding: '12px 14px' }}>
@@ -414,13 +417,13 @@ function Step5Ready({ onDone }: { onDone: () => void }) {
 
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(1)
-  const { clientTxtOk, oauthStatus, connection, char } = useStore()
+  const { clientTxtPathOk, oauthStatus, connection, char } = useStore()
 
   const next = () => setStep(s => Math.min(s + 1, 5))
 
   const stepValid = (n: number): boolean => {
     switch (n) {
-      case 1: return clientTxtOk
+      case 1: return clientTxtPathOk
       case 2: return oauthStatus === 'valid'
       case 3: return connection === 'connected'
       case 4: return char !== null

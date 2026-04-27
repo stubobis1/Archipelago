@@ -240,10 +240,6 @@ function ChatPanel() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--bg-2)' }}>
-      <div style={{ padding: '14px 20px 10px', borderBottom: '1px solid var(--rule)' }}>
-        <h2 style={{ fontFamily: 'var(--display)', fontWeight: 400, fontSize: 22, lineHeight: 1, letterSpacing: '-.005em', margin: 0 }}>Multiworld chat</h2>
-      </div>
-
       <div style={{ flex: 1, overflow: 'auto', padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 1, fontSize: 12.5 }}>
         {chat.map((m, i) => <ChatLine key={i} msg={m} />)}
         <div ref={chatEndRef} />

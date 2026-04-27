@@ -46,7 +46,7 @@ function rarityCheck(receivedNames: string[], frameType: number, slot: string): 
 }
 
 // GGG API v2 returns equipment as an array; normalize to array regardless
-function toEquipArray(char: GGGCharacter): any[] {
+export function toEquipArray(char: GGGCharacter): any[] {
   if (!char.equipment) return []
   return Array.isArray(char.equipment) ? char.equipment as any[] : Object.values(char.equipment)
 }
