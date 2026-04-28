@@ -2,7 +2,7 @@ import { app, BrowserWindow, protocol, net, globalShortcut } from 'electron'
 import * as path from 'path'
 import * as url from 'url'
 
-import { initIpc, getFullState } from './ipc'
+import { initIpc, getFullState, clearFilters } from './ipc'
 import { clientTxtWatcher } from './services/clientTxtWatcher'
 import { settingsService } from './services/settings'
 import { initLogger, logger } from './services/logger'
@@ -12,7 +12,7 @@ function registerApAssetsProtocol(): void {
   protocol.handle('ap-assets', (request) => {
     const reqUrl  = new URL(request.url)
     const relPath = decodeURIComponent(reqUrl.pathname)
-    const imgRoot = path.resolve(__dirname, '../../resources/images')
+    const imgRoot = path.resolve(__dirname, '../../resources')
     const fullPath = path.join(imgRoot, relPath)
     return net.fetch(url.pathToFileURL(fullPath).toString())
   })
@@ -76,5 +76,6 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   clientTxtWatcher.stop()
+  clearFilters()
   if (process.platform !== 'darwin') app.quit()
 })

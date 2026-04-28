@@ -9,15 +9,16 @@ import { getCachedCharacter } from './services/gggApi'
 import { clientTxtWatcher } from './services/clientTxtWatcher'
 import { queueChatSend } from './services/gameInput'
 import { apSocket } from './services/apSocket'
-import { getItems, getBosses } from './data'
+import { getItems, getBosses, getBaseItems, getLevelLocations } from './data'
 import { logger } from './services/logger'
 import { checkGoalZone, checkBossDrops } from './validation'
 import { state, patch, pushChat, timestamp, sc, setSettingsContext, setGameOpts, setPendingGoalToken } from './ipc-state'
-import { regenFilter, handleZoneEntry } from './ipc-filter'
+import { regenFilter, handleZoneEntry, clearFilters } from './ipc-filter'
 import { handleChatCommand } from './ipc-chat'
 import { handleAction } from './ipc-actions'
 
 export { state, getFullState } from './ipc-state'
+export { clearFilters } from './ipc-filter'
 
 import poeVersion from '../../poe-version.json'
 const CLIENT_VERSION = poeVersion.clientVersion
@@ -26,11 +27,32 @@ const BACKWARDS_COMPATIBLE_VERSIONS = new Set(poeVersion.backwardsCompatibleVers
 // Highest item index whispered so far — prevents re-whispering on reconnect replay
 let _highWaterIndex = -1
 
+// Batch item whispers — AP sends itemsReceived as a burst; flush on next tick
+let _pendingWhisperNames: string[] = []
+let _pendingWhisperTimer: ReturnType<typeof setTimeout> | null = null
+
+function flushItemWhisper(charName: string): void {
+  if (_pendingWhisperNames.length === 0) return
+  const raw = _pendingWhisperNames.splice(0)
+  // Collapse duplicates: ["Foo", "Foo", "Bar"] → ["Foo x2", "Bar"]
+  const counts: Record<string, number> = {}
+  for (const n of raw) counts[n] = (counts[n] ?? 0) + 1
+  const names = Object.entries(counts).map(([n, c]) => c > 1 ? `${n} x${c}` : n)
+  const prefix = `@${charName} `
+  const maxBody = 500 - prefix.length
+  const full = 'You received: ' + names.join(', ')
+  for (let i = 0; i < full.length; i += maxBody) {
+    queueChatSend(prefix + full.slice(i, i + maxBody))
+  }
+}
+
 /**
  * Register all IPC handlers and wire up AP socket / client-txt watcher callbacks.
  * Must be called once after the Electron app is ready and a BrowserWindow exists.
  */
 export function initIpc(): void {
+  clearFilters()
+
   // Init oauth state from persisted token
   const token = getValidToken()
   if (token) {
@@ -49,6 +71,7 @@ export function initIpc(): void {
     deathlink:       s.deathlink ?? false,
     clientTxtOk:     false,
     clientTxtPathOk: !!(s.clientTxtPath && fs.existsSync(s.clientTxtPath)),
+    docPathOk:       !!(s.poeDocPath && fs.existsSync(s.poeDocPath)),
     filterOk:        !!(s.poeDocPath && fs.existsSync(path.join(s.poeDocPath, '__ap.filter'))),
     onboardingDone:  s.onboardingDone ?? false,
     charName:        s.lastCharName ?? null,
@@ -69,6 +92,7 @@ export function initIpc(): void {
       setSettingsContext(ev.seedName, ev.slotData?.['poe-uuid'] ?? settingsService.get().poeUuid ?? '', ev.slot)
       const ws = settingsService.get(...sc())
       patch({ deathlink: ws.deathlink, whisperUpdates: ws.whisperUpdates })
+      _highWaterIndex = Math.max(_highWaterIndex, ws.chatHighWaterIndex ?? -1)
 
       const gameOpts = ev.slotData?.game_options ?? ev.slotData ?? {}
       setGameOpts(gameOpts)
@@ -82,6 +106,17 @@ export function initIpc(): void {
         complete: state.goal?.complete ?? false,
       }
       patch({ connection: 'connected', slotName: ev.slot, goal: goalState })
+
+      // Defer one tick so archipelago.js finishes populating room.checkedLocations/missingLocations
+      setTimeout(() => {
+        const nameToAct: Record<string, number | string> = {}
+        for (const b of getBaseItems()) nameToAct[b.name] = b.act
+        for (const boss of Object.values(getBosses())) nameToAct[boss.name] = '0_boss'
+        for (const lvl of getLevelLocations()) nameToAct[lvl.name] = 'level'
+        const rawLocs = apSocket.getAllLocationsWithNames()
+        const locations = rawLocs.map(l => ({ ...l, act: nameToAct[l.name] ?? 'Other' }))
+        patch({ locations })
+      }, 0)
       pushChat({ t: timestamp(), kind: 'sys', body: `Connected as "${ev.slot}" · Path of Exile` })
 
       // H-3: version check
@@ -101,11 +136,14 @@ export function initIpc(): void {
       regenFilter()
     }
     if (ev.type === 'locationsChecked') {
+      const checkedSet = new Set(ev.ids)
+      state.locations = state.locations.map(l => checkedSet.has(l.id) ? { ...l, checked: true } : l)
+      patch({ locations: state.locations })
       regenFilter()
     }
     if (ev.type === 'disconnected') {
       logger.info('AP disconnected')
-      patch({ connection: 'disconnected' })
+      patch({ connection: 'disconnected', locations: [] })
       pushChat({ t: timestamp(), kind: 'sys', body: 'Disconnected from server' })
     }
     if (ev.type === 'item') {
@@ -117,7 +155,10 @@ export function initIpc(): void {
       // Dedup: archipelago.js replays all items from index 0 on reconnect.
       // Only whisper items with an index strictly above the high-water mark.
       const isNew = item.index > _highWaterIndex
-      if (isNew) _highWaterIndex = item.index
+      if (isNew) {
+        _highWaterIndex = item.index
+        settingsService.set('chatHighWaterIndex', _highWaterIndex, ...sc())
+      }
 
       const alreadyHave = state.items.some(i => i.index === item.index)
       if (!alreadyHave) {
@@ -144,8 +185,25 @@ export function initIpc(): void {
         }
       }
 
-      if (isNew && state.whisperUpdates) {
+      if (isNew) {
         pushChat({ t: timestamp(), kind: 'item', body: `${item.name} from ${item.from}` })
+        if (state.whisperUpdates) {
+          const ws = settingsService.get(...sc())
+          const whispered = new Set(ws.whisperedIndices ?? [])
+          if (!whispered.has(item.index)) {
+            whispered.add(item.index)
+            settingsService.set('whisperedIndices', [...whispered], ...sc())
+            const charName = state.charName ?? state.char?.name
+            if (charName) {
+              _pendingWhisperNames.push(item.name)
+              if (_pendingWhisperTimer) clearTimeout(_pendingWhisperTimer)
+              _pendingWhisperTimer = setTimeout(() => {
+                _pendingWhisperTimer = null
+                flushItemWhisper(charName)
+              }, 2000)
+            }
+          }
+        }
       }
     }
     if (ev.type === 'chat') {

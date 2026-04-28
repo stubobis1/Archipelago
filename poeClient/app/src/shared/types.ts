@@ -17,8 +17,10 @@ export interface Settings {
   // Preferences
   whisperUpdates:   boolean
   bypassFocusCheck: boolean
-  inputDelayEnter:  number
-  inputDelayPaste:  number
+  inputDelayEnter:      number
+  inputDelayPaste:      number
+  inputDebounceZone:    number
+  inputDebounceWhisper: number
   deathlink:       boolean
   filterDisplay:   FilterDisplay
   filterSound:     FilterSound
@@ -31,6 +33,10 @@ export interface Settings {
   lastCharName:    string | null
   // Onboarding
   onboardingDone:  boolean
+  // Whisper dedup — indices already sent to in-game chat
+  whisperedIndices: number[]
+  // Chat dedup — highest item index already shown in UI chat
+  chatHighWaterIndex: number
 }
 
 export interface CharacterData {
@@ -142,6 +148,7 @@ export interface GoalState {
   defeated: string[]
   eligible: boolean   // conditions met; user may click Send Goal
   complete: boolean
+  actZoneReached?: number
 }
 
 export interface ValidationError {
@@ -158,6 +165,13 @@ export interface APHint {
   found:     boolean
 }
 
+export interface APLocation {
+  id:      number
+  name:    string
+  checked: boolean
+  act:     number | string
+}
+
 // IPC state snapshot pushed from main → renderer
 export interface AppState {
   connection:  ConnectionStatus
@@ -171,6 +185,7 @@ export interface AppState {
   zone:        string
   clientTxtOk:       boolean
   clientTxtPathOk:   boolean
+  docPathOk:         boolean
   filterOk:    boolean
   items:       ReceivedItem[]
   chat:        ChatMessage[]
@@ -179,6 +194,7 @@ export interface AppState {
   deathlink:   boolean
   whisperUpdates: boolean
   hints:       APHint[]
+  locations:   APLocation[]
   // onboarding
   onboardingStep: number
   onboardingDone: boolean

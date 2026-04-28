@@ -183,6 +183,22 @@ function createAPSocket() {
       client.messages.say(`!hint ${itemName}`)
     },
 
+    /** Returns all locations (checked + missing) with names from the DataPackage. */
+    getAllLocationsWithNames(): { id: number; name: string; checked: boolean }[] {
+      if (!client || !_connected) return []
+      try {
+        const pkg = client.package.findPackage('Path of Exile')
+        if (!pkg) return []
+        const idToName: Record<number, string> = pkg.reverseLocationTable ?? {}
+        const checkedSet = new Set<number>(client.room?.checkedLocations ?? [])
+        const missing: number[] = client.room?.missingLocations ?? []
+        const all = [...checkedSet, ...missing]
+        return all
+          .map(id => ({ id, name: idToName[id] ?? '', checked: checkedSet.has(id) }))
+          .filter(({ name }) => !!name)
+      } catch { return [] }
+    },
+
     /** Returns all missing locations as { id, name } pairs from the DataPackage reverse table. */
     getMissingLocationsWithNames(): { id: number; name: string }[] {
       if (!client || !_connected) return []

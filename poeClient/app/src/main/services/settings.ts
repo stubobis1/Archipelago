@@ -10,8 +10,10 @@ const DEFAULTS: Settings = {
   password:         '',
   whisperUpdates:   true,
   bypassFocusCheck: false,
-  inputDelayEnter:  0,
-  inputDelayPaste:  0,
+  inputDelayEnter:      0,
+  inputDelayPaste:      0,
+  inputDebounceZone:    0,
+  inputDebounceWhisper: 150,
   deathlink:        false,
   filterDisplay:    0,
   filterSound:      2,
@@ -22,6 +24,8 @@ const DEFAULTS: Settings = {
   poeUuid:          null,
   lastCharName:     null,
   onboardingDone:   false,
+  whisperedIndices: [],
+  chatHighWaterIndex: -1,
 }
 
 /** Derive a store key from connection context; falls back to "default". */

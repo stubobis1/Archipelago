@@ -1,161 +1,8 @@
-import React from 'react'
 import { useStore } from '../store'
-import type { ReceivedItem } from '@shared/types'
-
-const TIER_LABELS       = ['Normal', 'Magic', 'Rare', 'Unique'] as const
-const TIER_CLS          = ['eq-rarity-normal', 'eq-rarity-magic', 'eq-rarity-rare', 'eq-rarity-unique']
-const FLASK_TIER_LABELS = ['Normal', 'Magic', 'Unique'] as const
-const FLASK_TIER_CLS    = ['eq-rarity-normal', 'eq-rarity-magic', 'eq-rarity-unique']
-
-const WEAPON_SUBS  = ['Axe','Bow','Claw','Dagger','Mace','Sceptre','Staff','Sword','Wand']
-const OFFHAND_SUBS = ['Shield', 'Quiver']
-
-const imgUrl = (name: string) =>
-  `ap-assets:///${name.toLowerCase().replace(/['\s]/g, '')}.png`
-
-/** Build a name → count map from received items. */
-function buildCounts(items: ReceivedItem[]): Record<string, number> {
-  return items.reduce<Record<string, number>>((acc, i) => {
-    acc[i.name] = (acc[i.name] || 0) + 1
-    return acc
-  }, {})
-}
-
-/** Returns [normalUnlocked, magicUnlocked, rareUnlocked, uniqueUnlocked] for a given slot base. */
-function slotTiers(counts: Record<string, number>, base: string): boolean[] {
-  const prog = counts[`Progressive ${base}`] || 0
-  return TIER_LABELS.map((t, i) => !!(counts[`${t} ${base}`] || prog >= i + 1))
-}
-
-// Counts are passed down via context to avoid prop-drilling through every slot component
-const CountsCtx = React.createContext<Record<string, number>>({})
-const useCounts = () => React.useContext(CountsCtx)
-
-function TierRow({ tiers, labels, css }: { tiers: boolean[]; labels: readonly string[]; css: string[] }) {
-  return (
-    <div className="eq-rarity-row">
-      {labels.map((t, i) => (
-        <React.Fragment key={t}>
-          {i > 0 && <span className="eq-rarity-sep">·</span>}
-          <span className={tiers[i] ? css[i] : 'eq-rarity-off'}>{t}</span>
-        </React.Fragment>
-      ))}
-    </div>
-  )
-}
-
-function TierStack({ tiers, labels, css }: { tiers: boolean[]; labels: readonly string[]; css: string[] }) {
-  return (
-    <div className="eq-rarity-stack">
-      {labels.map((t, i) => <span key={t} className={tiers[i] ? css[i] : 'eq-rarity-off'}>{t}</span>)}
-    </div>
-  )
-}
-
-function Tier2col({ tiers }: { tiers: boolean[] }) {
-  const c = (i: number) => <span className={tiers[i] ? TIER_CLS[i] : 'eq-rarity-off'}>{TIER_LABELS[i]}</span>
-  return (
-    <div className="eq-rarity-2col">
-      {c(0)}<span className="eq-rarity-sep">·</span>{c(1)}
-      {c(2)}<span className="eq-rarity-sep">·</span>{c(3)}
-    </div>
-  )
-}
-
-function LinkDots({ linkName, unlocked }: { linkName: string; unlocked: boolean }) {
-  const counts = useCounts()
-  const MAX: Record<string, number> = { Helm: 4, Gloves: 4, Boots: 4, BodyArmour: 6, Weapon: 6, Offhand: 3 }
-  const max = MAX[linkName]
-  if (!max) return null
-  const prog = counts[`Progressive max links - ${linkName}`] || 0
-  if (prog === 0 && !unlocked) return null
-  const cur   = prog + 1
-  const label = `${cur} link${cur !== 1 ? 's' : ''}`
-  return (
-    <div className="eq-links">
-      <div className="eq-links-label">{label}</div>
-      <div className="eq-link-row">
-        {Array.from({ length: max }).map((_, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && <span className={`eq-link-conn${i < cur ? ' lit' : ''}`} />}
-            <span className={`eq-link-dot${i < cur ? ' lit' : ''}`} />
-          </React.Fragment>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function EqSlot({ area, title, base, imgFile, linkName, variant = 'row', slotClass = '' }: {
-  area: string; title: string; base: string; imgFile: string
-  linkName?: string; variant?: 'row' | 'stack' | '2col'; slotClass?: string
-}) {
-  const counts   = useCounts()
-  const tiers    = slotTiers(counts, base)
-  const unlocked = tiers.some(Boolean)
-  return (
-    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}${slotClass ? ` ${slotClass}` : ''}`} style={{ gridArea: area }}>
-      <div className="eq-slot-title">{title}</div>
-      <img className="eq-slot-img" src={imgUrl(imgFile)} alt={title}
-        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-      {variant === 'stack' && <TierStack tiers={tiers} labels={TIER_LABELS} css={TIER_CLS} />}
-      {variant === '2col'  && <Tier2col tiers={tiers} />}
-      {variant === 'row'   && <TierRow  tiers={tiers} labels={TIER_LABELS} css={TIER_CLS} />}
-      {linkName && <LinkDots linkName={linkName} unlocked={unlocked} />}
-    </div>
-  )
-}
-
-function MultiSlot({ area, title, subs, linkName, imgFile, slotClass = '' }: {
-  area: string; title: string; subs: string[]; linkName?: string; imgFile?: string; slotClass?: string
-}) {
-  const counts   = useCounts()
-  const unlocked = subs.some(sub => slotTiers(counts, sub).some(Boolean))
-  return (
-    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}${slotClass ? ` ${slotClass}` : ''}`} style={{ gridArea: area }}>
-      <div className="eq-slot-title">{title}</div>
-      {imgFile && (
-        <img className="eq-slot-img" src={imgUrl(imgFile)} alt={title}
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-      )}
-      <div className="eq-sub-list">
-        {subs.map(sub => (
-          <div className="eq-sub-row" key={sub}>
-            <span className="eq-sub-label">{sub}</span>
-            <Tier2col tiers={slotTiers(counts, sub)} />
-          </div>
-        ))}
-      </div>
-      {linkName && <LinkDots linkName={linkName} unlocked={unlocked} />}
-    </div>
-  )
-}
-
-function FlaskSlot({ slotNum }: { slotNum: number }) {
-  const counts     = useCounts()
-  const prog       = counts['Progressive Flask Unlock']        || 0
-  const normProg   = counts['Progressive Normal Flask Unlock'] || 0
-  const magicProg  = counts['Progressive Magic Flask Unlock']  || 0
-  const uniqueProg = counts['Progressive Unique Flask Unlock'] || 0
-  const tiers = [
-    prog >= slotNum      || normProg  >= slotNum,
-    prog >= slotNum + 5  || magicProg >= slotNum,
-    prog >= slotNum + 10 || uniqueProg >= slotNum,
-  ]
-  const unlocked = tiers.some(Boolean)
-  return (
-    <div className={`eq-slot${unlocked ? '' : ' eq-slot-empty'}`}>
-      <div className="eq-slot-title">Flask {slotNum}</div>
-      <img className="eq-slot-img" src={imgUrl('Progressive Normal Flask Unlock')} alt={`Flask ${slotNum}`}
-        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
-      <TierStack tiers={tiers} labels={FLASK_TIER_LABELS} css={FLASK_TIER_CLS} />
-    </div>
-  )
-}
+import { PaperDoll } from '../components/PaperDoll'
 
 export function GearScreen() {
   const { items, char, errors } = useStore()
-  const counts = buildCounts(items)
 
   const anyUnlocked = items.some(i =>
     /^(Progressive|Normal|Magic|Rare|Unique) /.test(i.name) ||
@@ -163,54 +10,36 @@ export function GearScreen() {
   )
 
   return (
-    <CountsCtx.Provider value={counts}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <div className="page-header">
-          <h1>Equipment</h1>
-          <div className="sub">
-            AP unlock tiers · {char ? `${char.name} · ${char.class} lv ${char.level}` : 'no character loaded'}
-            {errors.length > 0 && <span className="pill err" style={{ marginLeft: 12 }}>{errors.length} issues</span>}
-          </div>
-        </div>
-
-        <div style={{ padding: '28px 28px' }}>
-          {!anyUnlocked && (
-            <div style={{ color: 'var(--ink-3)', fontSize: 13, textAlign: 'center', padding: '60px 0' }}>
-              Connect to the multiworld to see equipment.
-            </div>
-          )}
-
-          {anyUnlocked && (
-            <div className="eq-grid">
-              <EqSlot area="helmet"     title="Helmet"      base="Helmet"     imgFile="normalhelmet"     linkName="Helm"       variant="2col" />
-              <MultiSlot area="weapon"  title="Weapon"      subs={WEAPON_SUBS}                           linkName="Weapon" />
-              <MultiSlot area="offhand" title="Offhand"     subs={OFFHAND_SUBS}                          linkName="Offhand"   imgFile="normalshield" slotClass="eq-slot-lg" />
-              <EqSlot area="body"       title="Body Armour" base="BodyArmour" imgFile="normalbodyarmour" linkName="BodyArmour" variant="2col" slotClass="eq-slot-lg" />
-              <EqSlot area="amulet"     title="Amulet"      base="Amulet"     imgFile="normalamulet"                          variant="stack" />
-              <EqSlot area="ringleft"   title="Left Ring"   base="Ring (left)"  imgFile="normalring(left)"                    variant="stack" />
-              <EqSlot area="ringright"  title="Right Ring"  base="Ring (right)" imgFile="normalring(right)"                   variant="stack" />
-              <EqSlot area="gloves"     title="Gloves"      base="Gloves"     imgFile="normalgloves"     linkName="Gloves"    variant="2col" />
-              <EqSlot area="belt"       title="Belt"        base="Belt"       imgFile="normalbelt"                            variant="2col" />
-              <EqSlot area="boots"      title="Boots"       base="Boots"      imgFile="normalboots"      linkName="Boots"     variant="2col" />
-              <div className="eq-flask-row">
-                {[1, 2, 3, 4, 5].map(n => <FlaskSlot key={n} slotNum={n} />)}
-              </div>
-            </div>
-          )}
-
-          {errors.length > 0 && (
-            <div style={{ marginTop: 32, maxWidth: 640 }}>
-              <div className="label" style={{ marginBottom: 12 }}>Validation errors</div>
-              {errors.map((e, i) => (
-                <div key={i} style={{ background: 'color-mix(in oklch, var(--err) 8%, var(--panel))', border: '1px solid color-mix(in oklch, var(--err) 40%, var(--rule))', borderRadius: 4, padding: '10px 14px', marginBottom: 6, fontSize: 12.5 }}>
-                  <span className="mono" style={{ color: 'var(--err)', marginRight: 10 }}>{e.slot}</span>
-                  <span style={{ color: 'var(--ink-2)' }}>{e.msg}</span>
-                </div>
-              ))}
-            </div>
-          )}
+    <div style={{ flex: 1, overflow: 'auto' }}>
+      <div className="page-header">
+        <h1>Equipment</h1>
+        <div className="sub">
+          AP unlock tiers · {char ? `${char.name} · ${char.class} lv ${char.level}` : 'no character loaded'}
+          {errors.length > 0 && <span className="pill err" style={{ marginLeft: 12 }}>{errors.length} issues</span>}
         </div>
       </div>
-    </CountsCtx.Provider>
+
+      <div style={{ padding: '28px 28px' }}>
+        {!anyUnlocked && (
+          <div style={{ color: 'var(--ink-3)', fontSize: 13, textAlign: 'center', padding: '60px 0' }}>
+            Connect to the multiworld to see equipment.
+          </div>
+        )}
+
+        {anyUnlocked && <PaperDoll items={items} />}
+
+        {errors.length > 0 && (
+          <div style={{ marginTop: 32, maxWidth: 640 }}>
+            <div className="label" style={{ marginBottom: 12 }}>Validation errors</div>
+            {errors.map((e, i) => (
+              <div key={i} style={{ background: 'color-mix(in oklch, var(--err) 8%, var(--panel))', border: '1px solid color-mix(in oklch, var(--err) 40%, var(--rule))', borderRadius: 4, padding: '10px 14px', marginBottom: 6, fontSize: 12.5 }}>
+                <span className="mono" style={{ color: 'var(--err)', marginRight: 10 }}>{e.slot}</span>
+                <span style={{ color: 'var(--ink-2)' }}>{e.msg}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

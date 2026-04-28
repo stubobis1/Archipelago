@@ -1,7 +1,7 @@
 import { useStore } from '../store'
 import logoUrl from '@resources/poeAP.png'
 
-type Screen = 'dashboard' | 'gear' | 'items' | 'goal' | 'settings' | 'setup'
+type Screen = 'dashboard' | 'gear' | 'items' | 'locations' | 'goal' | 'settings' | 'setup'
 
 interface SidebarProps {
   active:    Screen
@@ -12,6 +12,7 @@ const NAV: { id: Screen; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard',  icon: '⊞' },
   { id: 'gear',      label: 'Gear',       icon: '⚔' },
   { id: 'items',     label: 'Items',      icon: '◈' },
+  { id: 'locations', label: 'Locations',  icon: '◉' },
   { id: 'goal',      label: 'Goal',       icon: '◎' },
   { id: 'settings',  label: 'Settings',   icon: '⚙' },
   { id: 'setup',     label: 'Setup',      icon: '◑' },

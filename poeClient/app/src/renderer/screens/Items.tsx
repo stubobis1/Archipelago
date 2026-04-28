@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useStore } from '../store'
 import type { ReceivedItem, APHint } from '@shared/types'
+import { initGemTooltips, preloadGems, showGemTooltip, hideGemTooltip, moveGemTooltip } from '../services/gemTooltip'
+import { PaperDoll } from '../components/PaperDoll'
 
 const CLASS_TREE = [
   { base: 'Marauder', asc: ['Berserker', 'Chieftain', 'Juggernaut'] },
@@ -24,7 +26,7 @@ const CAT_CSS: Record<string, string> = {
 }
 
 function imgUrl(name: string) {
-  return `ap-assets:///${name.toLowerCase().replace(/['\s]/g, '')}.png`
+  return `ap-assets:///images/${name.toLowerCase().replace(/['\s]/g, '')}.png`
 }
 
 function categorizeItem(item: ReceivedItem): string {
@@ -43,9 +45,14 @@ function categorizeItem(item: ReceivedItem): string {
   return 'Other'
 }
 
-function ItemTag({ name, count, css }: { name: string; count: number; css: string }) {
+function ItemTag({ name, count, css, isGem }: { name: string; count: number; css: string; isGem?: boolean }) {
+  const handlers = isGem ? {
+    onMouseEnter: (e: React.MouseEvent) => showGemTooltip(e.nativeEvent, name),
+    onMouseLeave: () => hideGemTooltip(),
+    onMouseMove:  (e: React.MouseEvent) => moveGemTooltip(e.nativeEvent),
+  } : {}
   return (
-    <span className={`item-tag ${css}`}>
+    <span className={`item-tag ${css}`} style={isGem ? { cursor: 'default' } : undefined} {...handlers}>
       <img className="item-img" src={imgUrl(name)} alt=""
         onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
       {name}
@@ -54,9 +61,12 @@ function ItemTag({ name, count, css }: { name: string; count: number; css: strin
   )
 }
 
+const GEM_CATS = new Set(['Skill Gems', 'Support Gems', 'Utility Gems'])
+
 function CatSection({ cat, entries }: { cat: string; entries: [string, number][] }) {
   const [collapsed, setCollapsed] = useState(false)
-  const css = CAT_CSS[cat] ?? ''
+  const css   = CAT_CSS[cat] ?? ''
+  const isGem = GEM_CATS.has(cat)
   const total = entries.reduce((s, [, c]) => s + c, 0)
   return (
     <div className="cat-section">
@@ -68,7 +78,7 @@ function CatSection({ cat, entries }: { cat: string; entries: [string, number][]
       {!collapsed && (
         <div className="cat-body">
           {entries.map(([name, count]) => (
-            <ItemTag key={name} name={name} count={count} css={css} />
+            <ItemTag key={name} name={name} count={count} css={css} isGem={isGem} />
           ))}
         </div>
       )}
@@ -263,9 +273,20 @@ function HintsSection({ hints }: { hints: APHint[] }) {
 export function ItemsScreen() {
   const { items, hints, char } = useStore()
 
+  useEffect(() => { initGemTooltips() }, [])
+
+  useEffect(() => {
+    const gemNames = items
+      .filter(i => GEM_CATS.has(categorizeItem(i)))
+      .map(i => i.name)
+      .filter((n, idx, arr) => arr.indexOf(n) === idx)
+    if (gemNames.length) preloadGems(gemNames)
+  }, [items])
+
   const passiveItems = items.filter(i => i.name === 'Progressive passive point' || i.name.toLowerCase().includes('passive point'))
   const passiveCount = passiveItems.length
   const allocatedPassives = (char?.passives as any)?.hashes?.length ?? 0
+  const availablePassives = passiveCount - allocatedPassives
 
   const classItems = new Set(CLASS_TREE.flatMap(r => [r.base, ...r.asc]))
   const receivedNames = new Set(items.map(i => i.name))
@@ -286,8 +307,10 @@ export function ItemsScreen() {
         <h1>Items</h1>
         <div className="sub">{items.length} received</div>
       </div>
+      <style>{`@keyframes passive-flash { from { opacity: 1 } to { opacity: 0.25 } }`}</style>
 
-      <div style={{ padding: '24px 28px', maxWidth: 1100 }}>
+      <div className="items-page-outer">
+      <div className="items-page-content">
         {items.length === 0 && (
           <div style={{ color: 'var(--ink-3)', fontSize: 13, textAlign: 'center', padding: '60px 0' }}>
             No items received yet. Connect to an Archipelago server to start.
@@ -301,7 +324,14 @@ export function ItemsScreen() {
               style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }}
               onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
             <span style={{ fontSize: 13, fontWeight: 500 }}>Passive Points</span>
-            <span className="mono" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.3 }}>
+            <span style={{
+              fontSize: 13, fontWeight: 600,
+              color: availablePassives > 0 ? 'var(--ok)' : availablePassives < 0 ? 'var(--err)' : 'var(--ink-3)',
+              animation: availablePassives < 0 ? 'passive-flash 0.8s ease-in-out infinite alternate' : undefined,
+            }}>
+              {availablePassives > 0 ? '+' : ''}{availablePassives} available
+            </span>
+            <span className="mono" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.3, marginLeft: 'auto' }}>
               <span style={{ fontSize: 12, color: 'var(--accent)' }}>{allocatedPassives} <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>allocated</span></span>
               <span style={{ fontSize: 10, color: 'var(--ink-4)' }}>────────</span>
               <span style={{ fontSize: 12, color: 'var(--accent)' }}>{passiveCount} <span style={{ fontSize: 10, color: 'var(--ink-3)' }}>unlocked</span></span>
@@ -321,6 +351,19 @@ export function ItemsScreen() {
 
         {/* Hints */}
         <HintsSection hints={hints} />
+
+        {/* Paper doll — visible below 1650px, hidden at wide breakpoint where it moves to sidebar */}
+        <div className="items-paperdoll-bottom">
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14, marginTop: 40 }}>Equipment</div>
+          <PaperDoll items={items} mobile />
+        </div>
+      </div>
+
+      {/* Paper doll sidebar — only visible at wide breakpoint */}
+      <div className="items-paperdoll-sidebar">
+        <div className="mono" style={{ fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>Equipment</div>
+        <PaperDoll items={items} mobile />
+      </div>
       </div>
     </div>
   )

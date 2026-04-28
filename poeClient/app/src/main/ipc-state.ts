@@ -13,6 +13,7 @@ export let state: AppState = {
   zone:            '',
   clientTxtOk:     false,
   clientTxtPathOk: false,
+  docPathOk:       false,
   filterOk:        false,
   items:           [],
   chat:            [],
@@ -21,6 +22,7 @@ export let state: AppState = {
   deathlink:       false,
   whisperUpdates:  true,
   hints:           [],
+  locations:       [],
   onboardingStep:  1,
   onboardingDone:  false,
 }

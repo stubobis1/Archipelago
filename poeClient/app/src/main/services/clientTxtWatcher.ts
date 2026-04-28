@@ -5,17 +5,22 @@ import { logger } from './logger'
 const ZONE_RE  = /\] : You have entered (.+)\./
 const DEATH_RE = /\] (.+) has been slain\./
 const CHAT_RE  = /\]\s?(?:<.*?>)?\s?(?:@To|@From)?\s?(.+): (?:\x00)?(.*)/
+const FOCUS_RE = /\[WINDOW\] (Gained|Lost) focus/
 
 export type ClientTxtEvent =
   | { type: 'zone';  zone: string }
   | { type: 'death'; who:  string }
   | { type: 'chat';  who:  string; msg: string }
+  | { type: 'focus'; gained: boolean }
   | { type: 'raw';   line: string }
 
 type Listener = (ev: ClientTxtEvent) => void
 
 /** Parse one trimmed Client.txt line into a typed event. Exported for testing. */
 export function parseLine(line: string): ClientTxtEvent {
+  const focusM = FOCUS_RE.exec(line)
+  if (focusM) return { type: 'focus', gained: focusM[1] === 'Gained' }
+
   const zoneM = ZONE_RE.exec(line)
   if (zoneM) return { type: 'zone', zone: zoneM[1] }
 

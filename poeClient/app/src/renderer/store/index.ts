@@ -18,6 +18,7 @@ const INITIAL: AppState = {
   zone:            '',
   clientTxtOk:     false,
   clientTxtPathOk: false,
+  docPathOk:       false,
   filterOk:        false,
   items:           [],
   chat:            [],
@@ -25,6 +26,8 @@ const INITIAL: AppState = {
   errors:          [],
   deathlink:       false,
   whisperUpdates:  true,
+  hints:           [],
+  locations:       [],
   onboardingStep:  1,
   onboardingDone:  false,
 }

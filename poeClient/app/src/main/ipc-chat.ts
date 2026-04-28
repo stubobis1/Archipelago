@@ -108,24 +108,25 @@ export async function handleChatCommand(who: string, msg: string): Promise<void>
     return
   }
 
-  // Only respond to our own character's messages.
-  // When knownChar is null (pre-identification) reject everything — the token
-  // flow above is the only valid path and it already returned.
-  const knownChar = state.char?.name ?? null
-  if (!knownChar || (who !== knownChar && who !== state.slotName)) return
-
-  const cmd = trimmed.toLowerCase()
-  const charLevel = state.char?.level
-
-  let resp: string | null = null
-
-  if (['!ap char', '!ap character', '!apchar'].includes(cmd)) {
+  // !ap char — must be before the owner guard so it works before character is identified
+  const cmd0 = trimmed.toLowerCase()
+  if (['!ap char', '!ap character', '!apchar', '!ap setchar', '!ap setcharacter', '!ap_char'].includes(cmd0)) {
     const token = Math.random().toString(36).slice(2, 10)
     _pendingCharToken = token
     queueChatSend(`char_${token}`)
     pushChat({ t: timestamp(), kind: 'sys', body: `Identifying character — sent char_${token}` })
     return
   }
+
+  // Only respond to our own character's messages.
+  // Fall back to charName when char object is absent (no OAuth / API offline).
+  const knownChar = state.char?.name ?? state.charName ?? null
+  if (!knownChar || (who !== knownChar && who !== state.slotName)) return
+
+  const cmd = trimmed.toLowerCase()
+  const charLevel = state.char?.level
+
+  let resp: string | null = null
 
   if (['!help', '!commands', '!cmds'].includes(cmd)) {
     resp = '!gear !weapons !armor !links !flasks !gems !main gems !support gems !utility gems !usable gems !ascendancy !passives !deathlink !whisper updates !goal !help'

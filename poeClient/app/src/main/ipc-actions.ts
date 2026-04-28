@@ -45,6 +45,12 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
           oauthDaysLeft: tokenTimeLeft(),
         })
         pushChat({ t: timestamp(), kind: 'sys', body: 'GGG OAuth complete' })
+        // Retry character fetch now that we have a valid token
+        const charName = state.char?.name ?? settingsService.get().lastCharName
+        if (charName && !state.char) {
+          const gggChar = await getCachedCharacter(charName, true)
+          if (gggChar) patch({ char: gggChar as any, charName: gggChar.name })
+        }
       } catch (e: any) {
         pushChat({ t: timestamp(), kind: 'sys', body: `OAuth error: ${e?.message}` })
       }
@@ -75,7 +81,9 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
         ]
         patch({ errors: errs })
         if (errs.length > 0) {
+          const errorText = errs.map(e => e.msg).join(', and ')
           queueChatSend('/itemfilter __invalid')
+          queueChatSend(`@${charName} Invalid state: ${errorText}`)
         } else {
           regenFilter()
           queueChatSend('/itemfilter __ap')
@@ -118,9 +126,12 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
       const GLOBAL_KEYS = new Set(['clientTxtPath', 'poeDocPath', 'baseItemFilter'])
       if (GLOBAL_KEYS.has(action.key)) settingsService.set(action.key, action.value as never)
       if (action.key === 'clientTxtPath') {
-        const p      = action.value as string
-        const pathOk = !!(p && fs.existsSync(p))
-        patch({ clientTxtPathOk: pathOk })
+        const p = action.value as string
+        patch({ clientTxtPathOk: !!(p && fs.existsSync(p)) })
+      }
+      if (action.key === 'poeDocPath') {
+        const p = action.value as string
+        patch({ docPathOk: !!(p && fs.existsSync(p)) })
       }
       if (action.key === 'filterSound' || action.key === 'filterDisplay' || action.key === 'baseItemFilter') {
         regenFilter()
@@ -170,8 +181,10 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
           ]
           patch({ errors: errs })
           if (errs.length > 0) {
-            pushChat({ t: timestamp(), kind: 'sys', body: `Out of logic: ${errs.map(e => e.msg).join(', ')}` })
+            const errorText = errs.map(e => e.msg).join(', and ')
+            pushChat({ t: timestamp(), kind: 'sys', body: `Out of logic: ${errorText}` })
             queueChatSend('/itemfilter __invalid')
+            queueChatSend(`@${gggChar.name} Invalid state: ${errorText}`)
           } else {
             queueChatSend('/itemfilter __ap')
           }

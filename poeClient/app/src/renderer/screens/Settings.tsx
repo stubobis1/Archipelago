@@ -3,9 +3,9 @@ import { useStore } from '../store'
 import type { Settings } from '@shared/types'
 import { PathInput } from '../components/PathInput'
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 36 }}>
+    <div id={id} style={{ marginBottom: 36 }}>
       <div className="mono" style={{ fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>{title}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {children}
@@ -36,9 +36,9 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 }
 
 
-export function SettingsScreen() {
+export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
   const action = useStore(s => s.action)
-  const { oauthStatus, oauthDaysLeft, oauthAccount, connection, serverAddr, deathlink } = useStore()
+  const { oauthStatus, oauthDaysLeft, oauthAccount, connection, deathlink } = useStore()
 
   const save = (key: keyof Settings) => (value: unknown) => {
     action({ type: 'saveSetting', key, value })
@@ -51,8 +51,15 @@ export function SettingsScreen() {
   const [filterSound,   setFilterSound]   = useState(2)
   const [delayEnter, setDelayEnter] = useState(0)
   const [delayPaste, setDelayPaste] = useState(0)
+  const [debounceZone,    setDebounceZone]    = useState(0)
+  const [debounceWhisper, setDebounceWhisper] = useState(150)
+  const [apAddr, setApAddr]         = useState('')
+  const [apSlot, setApSlot]         = useState('')
+  const [apPass, setApPass]         = useState('')
 
-  // Load persisted paths on mount
+  const connected  = connection === 'connected'
+  const connecting = connection === 'connecting'
+
   useEffect(() => {
     action({ type: 'getSettings' }).then((s: any) => {
       if (!s) return
@@ -67,8 +74,19 @@ export function SettingsScreen() {
       setFilterSound(s.filterSound   ?? 2)
       setDelayEnter(s.inputDelayEnter ?? 0)
       setDelayPaste(s.inputDelayPaste ?? 0)
+      setDebounceZone(s.inputDebounceZone ?? 0)
+      setDebounceWhisper(s.inputDebounceWhisper ?? 1000)
+      setApAddr(s.serverAddress ?? '')
+      setApSlot(s.slotName      ?? '')
+      setApPass(s.password      ?? '')
     })
   }, [])
+
+  useEffect(() => {
+    if (!scrollTo) return
+    const el = document.getElementById(`settings-${scrollTo}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [scrollTo])
 
   return (
     <div style={{ flex: 1, overflow: 'auto' }}>
@@ -79,7 +97,7 @@ export function SettingsScreen() {
 
       <div style={{ padding: '28px 28px', maxWidth: 860 }}>
 
-        <Section title="Paths">
+        <Section title="Paths" id="settings-paths">
           <Row label="Client.txt" note="PoE log file; tailed for zone changes, deaths, and chat commands.">
             <PathInput
               label="" value={paths.clientTxt}
@@ -100,6 +118,9 @@ export function SettingsScreen() {
               browseDefaultPath={paths.docPath || undefined}
             />
           </Row>
+        </Section>
+
+        <Section title="Item Filter" id="settings-filter">
           <Row label="Base item filter" note="Filter name to chain imports from (optional). The AP filter wraps it.">
             <PathInput
               label="" value={paths.baseFilter}
@@ -112,9 +133,26 @@ export function SettingsScreen() {
               filenameOnly
             />
           </Row>
+          <Row label="Display mode" note="How to display AP items in the loot filter.">
+            <div className="seg" style={{ fontSize: 11.5 }}>
+              {([['Show',0],['Hide Classification',3],['Randomize',2],['Hide',1]] as [string,number][]).map(([lbl,v]) => (
+                <div key={v} className={`opt${filterDisplay===v?' active':''}`} onClick={() => { setFilterDisplay(v); save('filterDisplay')(v) }}>{lbl}</div>
+              ))}
+            </div>
+          </Row>
+          <Row label="Sound mode" note="Alert sounds for AP items.">
+            <div className="seg" style={{ fontSize: 11.5 }}>
+              {([['None',0],['Jingles',2],['Random',3]] as [string,number][]).map(([lbl,v]) => (
+                <div key={v} className={`opt${filterSound===v?' active':''}`} onClick={() => { setFilterSound(v); save('filterSound')(v) }}>{lbl}</div>
+              ))}
+            </div>
+          </Row>
+          <Row label="Regenerate now" note="Force-write the filter immediately.">
+            <button className="btn" onClick={() => action({ type: 'regenerateFilter' })}>Regenerate filter</button>
+          </Row>
         </Section>
 
-        <Section title="GGG Account">
+        <Section title="GGG Account" id="settings-character">
           <Row label="OAuth status" note="Read-only access to character data.">
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <span className={`pill ${oauthStatus === 'valid' ? 'ok' : ''}`}>
@@ -134,17 +172,61 @@ export function SettingsScreen() {
           </Row>
         </Section>
 
-        <Section title="Archipelago Connection">
-          <Row label="Connection" note="Current server connection status.">
-            <span className={`pill ${connection === 'connected' ? 'ok' : ''}`}>
-              <span className="dot" />{connection} {serverAddr && `· ${serverAddr}`}
-            </span>
-          </Row>
-          <Row label={connection === 'connected' ? 'Disconnect' : 'Connect'} note={connection === 'connected' ? 'Drop current server connection.' : 'Connect to an Archipelago server from the Dashboard.'}>
-            {connection === 'connected'
-              ? <button className="btn" onClick={() => action({ type: 'disconnect' })}>Disconnect</button>
-              : <span className="muted mono" style={{ fontSize: 12 }}>Use the Dashboard to connect.</span>
-            }
+        <Section title="Archipelago Connection" id="settings-ap">
+          {connected ? (
+            <>
+              <Row label="Connection" note="Current server connection status.">
+                <span className="pill ok"><span className="dot" />connected · {apAddr || '—'}</span>
+              </Row>
+              <Row label="Disconnect" note="Drop current server connection.">
+                <button className="btn" onClick={() => action({ type: 'disconnect' })}>Disconnect</button>
+              </Row>
+            </>
+          ) : (
+            <>
+              <Row label="Server" note="Archipelago server address and port.">
+                <input
+                  className="input mono" style={{ fontSize: 12, width: '100%' }}
+                  placeholder="server:port"
+                  value={apAddr}
+                  onChange={e => setApAddr(e.target.value)}
+                  onBlur={() => save('serverAddress')(apAddr)}
+                />
+              </Row>
+              <Row label="Slot name" note="Your player slot name.">
+                <input
+                  className="input" style={{ fontSize: 12, width: '100%' }}
+                  placeholder="slot name"
+                  value={apSlot}
+                  onChange={e => setApSlot(e.target.value)}
+                  onBlur={() => save('slotName')(apSlot)}
+                />
+              </Row>
+              <Row label="Password" note="Server password (if required).">
+                <input
+                  className="input" type="password" style={{ fontSize: 12, width: '100%' }}
+                  placeholder="password (optional)"
+                  value={apPass}
+                  onChange={e => setApPass(e.target.value)}
+                  onBlur={() => save('password')(apPass)}
+                />
+              </Row>
+              <Row label="Connect" note="Connect to the Archipelago server.">
+                <button
+                  className="btn primary"
+                  disabled={!apAddr || !apSlot || connecting}
+                  onClick={() => action({ type: 'connect', addr: apAddr, slot: apSlot, password: apPass })}
+                >
+                  {connecting ? 'Connecting…' : 'Connect'}
+                </button>
+              </Row>
+            </>
+          )}
+        </Section>
+
+        <Section title="DeathLink">
+          <Row label="DeathLink" note="Send your death to the multiworld, and receive deaths from it.">
+            <Toggle on={deathlink} onChange={v => action({ type: 'setDeathlink', enabled: v })} />
           </Row>
         </Section>
 
@@ -167,33 +249,21 @@ export function SettingsScreen() {
               onChange={e => setDelayPaste(+e.target.value)}
               onBlur={() => save('inputDelayPaste')(delayPaste)} />
           </Row>
-        </Section>
-
-        <Section title="Item Filter">
-          <Row label="Display mode" note="How to display AP items in the loot filter.">
-            <div className="seg" style={{ fontSize: 11.5 }}>
-              {([['Show',0],['Hide Classification',3],['Randomize',2],['Hide',1]] as [string,number][]).map(([lbl,v]) => (
-                <div key={v} className={`opt${filterDisplay===v?' active':''}`} onClick={() => { setFilterDisplay(v); save('filterDisplay')(v) }}>{lbl}</div>
-              ))}
-            </div>
+          <Row label="Zone transition delay (ms)" note="Extra wait after entering a zone before sending any commands.">
+            <input className="input mono" type="number" min={0} max={10000} style={{ width: 80 }}
+              value={debounceZone}
+              onChange={e => setDebounceZone(+e.target.value)}
+              onBlur={() => save('inputDebounceZone')(debounceZone)} />
           </Row>
-          <Row label="Sound mode" note="Alert sounds for AP items.">
-            <div className="seg" style={{ fontSize: 11.5 }}>
-              {([['None',0],['Jingles',2],['Random',3]] as [string,number][]).map(([lbl,v]) => (
-                <div key={v} className={`opt${filterSound===v?' active':''}`} onClick={() => { setFilterSound(v); save('filterSound')(v) }}>{lbl}</div>
-              ))}
-            </div>
-          </Row>
-          <Row label="Regenerate now" note="Force-write the filter immediately.">
-            <button className="btn" onClick={() => action({ type: 'regenerateFilter' })}>Regenerate filter</button>
+          <Row label="Whisper debounce (ms)" note="Minimum time between consecutive sent messages.">
+            <input className="input mono" type="number" min={0} max={5000} style={{ width: 80 }}
+              value={debounceWhisper}
+              onChange={e => setDebounceWhisper(+e.target.value)}
+              onBlur={() => save('inputDebounceWhisper')(debounceWhisper)} />
           </Row>
         </Section>
 
-        <Section title="DeathLink">
-          <Row label="DeathLink" note="Send your death to the multiworld, and receive deaths from it.">
-            <Toggle on={deathlink} onChange={v => action({ type: 'setDeathlink', enabled: v })} />
-          </Row>
-        </Section>
+
 
         <Section title="Data">
           <Row label="Config directory" note="Open the folder where settings and logs are stored.">

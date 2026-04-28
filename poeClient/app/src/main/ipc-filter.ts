@@ -4,10 +4,21 @@ import { getCachedCharacter, clearCharCache } from './services/gggApi'
 import { writeFilters } from './services/filterWriter'
 import { queueChatSend } from './services/gameInput'
 import * as fs from 'fs'
+import * as path from 'path'
 import { getBaseItems, ensureJingles, ensureRandomSounds } from './data'
 import { logger } from './services/logger'
 import { validateCharEquipment, validatePassivePoints, toEquipArray } from './validation'
 import { state, patch, pushChat, timestamp, sc, getGameOpts } from './ipc-state'
+
+export function clearFilters(): void {
+  const s = settingsService.get()
+  if (!s.poeDocPath) return
+  const content = s.baseItemFilter ? `Import "${s.baseItemFilter}" Optional\n` : ''
+  try {
+    fs.writeFileSync(path.join(s.poeDocPath, '__ap.filter'), content, 'utf8')
+    fs.writeFileSync(path.join(s.poeDocPath, '__invalid.filter'), content, 'utf8')
+  } catch { /* ignore */ }
+}
 
 let _locationNameToBase: Record<string, string> | null = null
 
@@ -55,6 +66,9 @@ export function regenFilter(): void {
 }
 
 export async function handleZoneEntry(_zone: string): Promise<void> {
+  const zoneDelay = settingsService.get(...sc()).inputDebounceZone ?? 0
+  if (zoneDelay > 0) await new Promise(r => setTimeout(r, zoneDelay))
+
   const charName = state.char?.name ?? settingsService.get(...sc()).lastCharName ?? settingsService.get().lastCharName
   if (!charName) {
     pushChat({ t: timestamp(), kind: 'sys', body: 'Zone entered — no character set. Type !ap char in game to identify.' })
@@ -117,9 +131,10 @@ export async function handleZoneEntry(_zone: string): Promise<void> {
   }
 
   if (errs.length > 0) {
-    const errorText = errs.map((e: any) => e.msg).join(', ')
+    const errorText = errs.map((e: any) => e.msg).join(', and ')
     pushChat({ t: timestamp(), kind: 'sys', body: `Out of logic: ${errorText}` })
     queueChatSend('/itemfilter __invalid')
+    queueChatSend(`@${charName} Invalid state: ${errorText}`)
   } else {
     if (toCheck.size > 0) {
       apSocket.checkLocations([...toCheck])

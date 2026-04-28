@@ -64,11 +64,14 @@ function readJson<T>(name: string): T {
   return JSON.parse(fs.readFileSync(path.join(dataDir(), name), 'utf8')) as T
 }
 
+interface LevelLocation { name: string; level: number; act: number }
+
 // Lazy-loaded singletons — parsed once on first access
-let _items:     APItem[]                        | null = null
-let _baseItems: APBaseItem[]                    | null = null
-let _bosses:    Record<string, APBoss>          | null = null
-let _altGems:   Record<string, AlternateGem>   | null = null
+let _items:      APItem[]                        | null = null
+let _baseItems:  APBaseItem[]                    | null = null
+let _bosses:     Record<string, APBoss>          | null = null
+let _altGems:    Record<string, AlternateGem>   | null = null
+let _levelLocs:  LevelLocation[]                | null = null
 
 /** All AP item definitions (lazy-loaded from Items.json). */
 export function getItems(): APItem[] {
@@ -88,6 +91,11 @@ export function getBosses(): Record<string, APBoss> {
 /** Alternate gem map keyed by alternate gem name (lazy-loaded from AlternateGems.json). */
 export function getAlternateGems(): Record<string, AlternateGem> {
   return (_altGems ??= readJson<Record<string, AlternateGem>>('AlternateGems.json'))
+}
+
+/** Level milestone locations (lazy-loaded from LevelLocations.json). */
+export function getLevelLocations(): LevelLocation[] {
+  return (_levelLocs ??= readJson<LevelLocation[]>('LevelLocations.json'))
 }
 
 /** Look up a single AP item by name. */
