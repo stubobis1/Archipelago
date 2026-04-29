@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../store'
 import type { Settings } from '@shared/types'
-import { PathInput } from '../components/PathInput'
+import { PathInput, FilterPathInput } from '../components/PathInput'
 
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
@@ -122,15 +122,10 @@ export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
 
         <Section title="Item Filter" id="settings-filter">
           <Row label="Base item filter" note="Filter name to chain imports from (optional). The AP filter wraps it.">
-            <PathInput
-              label="" value={paths.baseFilter}
+            <FilterPathInput
+              value={paths.baseFilter} docPath={paths.docPath}
               onChange={v => setPaths(p => ({ ...p, baseFilter: v }))}
               onBlur={v => save('baseItemFilter')(v)}
-              placeholder="Neversink.filter"
-              mode="file" browseTitle="Select base filter"
-              browseDefaultPath={paths.docPath || undefined}
-              validateAs={paths.baseFilter && paths.docPath ? `${paths.docPath}\\${paths.baseFilter}` : ''}
-              filenameOnly
             />
           </Row>
           <Row label="Display mode" note="How to display AP items in the loot filter.">

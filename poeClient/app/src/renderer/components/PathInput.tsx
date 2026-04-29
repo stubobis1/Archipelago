@@ -38,6 +38,34 @@ interface PathInputProps {
   note?: React.ReactNode
 }
 
+interface FilterPathInputProps {
+  label?: React.ReactNode
+  value: string
+  docPath: string
+  onChange: (v: string) => void
+  onBlur?: (v: string) => void
+  note?: React.ReactNode
+}
+
+export function FilterPathInput({ label, value, docPath, onChange, onBlur, note }: FilterPathInputProps) {
+  const validateAs = value && docPath ? `${docPath.replace(/[\\/]$/, '')}/${value}` : ''
+  return (
+    <PathInput
+      label={label ?? ''}
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+      placeholder="Neversink.filter"
+      mode="file"
+      browseTitle="Select base item filter"
+      browseDefaultPath={docPath || undefined}
+      validateAs={validateAs}
+      filenameOnly
+      note={note}
+    />
+  )
+}
+
 export function PathInput({
   label, value, onChange, onBlur, placeholder,
   mode, browseTitle, browseDefaultPath,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store'
 import type { Settings } from '@shared/types'
-import { PathInput } from '../components/PathInput'
+import { PathInput, FilterPathInput } from '../components/PathInput'
 
 const STEPS = [
   { n: 1, label: 'Paths'     },
@@ -54,15 +54,11 @@ function Step1Paths({ onNext }: { onNext: () => void }) {
         mode="folder" browseTitle="Select PoE documents folder"
         browseDefaultPath={docPath || undefined}
       />
-      <PathInput
+      <FilterPathInput
         label={<>Base item filter <span className="muted mono" style={{ fontSize: 10, textTransform: 'none' }}>optional</span></>}
-        value={filter} onChange={setFilter}
+        value={filter} docPath={docPath}
+        onChange={setFilter}
         onBlur={v => savePath('baseItemFilter', v)}
-        placeholder="Neversink.filter"
-        mode="file" browseTitle="Select base item filter"
-        browseDefaultPath={docPath || undefined}
-        validateAs={filter && docPath ? `${docPath}\\${filter}` : ''}
-        filenameOnly
         note="Path to an existing filter file. The AP filter will chain-import it."
       />
       <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
