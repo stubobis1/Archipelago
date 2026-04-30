@@ -23,7 +23,7 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
       settingsService.setMany({ serverAddress: action.addr, slotName: action.slot, password: action.password })
       settingsService.setMany({ serverAddress: action.addr, slotName: action.slot, password: action.password }, ...sc())
       try {
-        await apSocket.connect(action.addr, action.slot, action.password)
+        await apSocket.connect(action.addr, action.slot, action.password, state.deathlink)
       } catch (e: any) {
         logger.error('Connect failed:', e?.message)
         patch({ connection: 'error' })
@@ -111,6 +111,7 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
     case 'setDeathlink': {
       patch({ deathlink: action.enabled })
       settingsService.set('deathlink', action.enabled, ...sc())
+      apSocket.setDeathlinkTag(action.enabled)
       return null
     }
 
@@ -182,7 +183,7 @@ export async function handleAction(action: IpcAction): Promise<unknown> {
           patch({ errors: errs })
           if (errs.length > 0) {
             const errorText = errs.map(e => e.msg).join(', and ')
-            pushChat({ t: timestamp(), kind: 'sys', body: `Out of logic: ${errorText}` })
+            pushChat({ t: timestamp(), kind: 'err', body: `Out of logic: ${errorText}` })
             queueChatSend('/itemfilter __invalid')
             queueChatSend(`@${gggChar.name} Invalid state: ${errorText}`)
           } else {

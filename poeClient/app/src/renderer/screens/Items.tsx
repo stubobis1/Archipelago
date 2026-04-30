@@ -398,7 +398,7 @@ export function ItemsScreen() {
       {/* Paper doll sidebar — only visible at wide breakpoint */}
       <div className="items-paperdoll-sidebar">
         <div className="mono" style={{ fontSize: 10.5, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>Equipment</div>
-        <PaperDoll items={items} mobile />
+        <PaperDoll items={items} />
       </div>
       </div>
     </div>

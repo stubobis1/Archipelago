@@ -42,7 +42,7 @@ function rarityCheck(receivedNames: string[], frameType: number, slot: string): 
   else if (rarity === 'Rare')   valid = receivedNames.includes(`Rare ${slot}`)   || prog >= 3
   else if (rarity === 'Magic')  valid = receivedNames.includes(`Magic ${slot}`)  || prog >= 2
   else                          valid = receivedNames.includes(`Normal ${slot}`)  || prog >= 1
-  return valid ? null : slot
+  return valid ? null : `${rarity} ${slot} not recived`
 }
 
 // GGG API v2 returns equipment as an array; normalize to array regardless

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../store'
 import type { Settings } from '@shared/types'
 import { PathInput, FilterPathInput } from '../components/PathInput'
+import { CharacterPicker } from '../components/CharacterPicker'
 
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
@@ -39,6 +40,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
   const action = useStore(s => s.action)
   const { oauthStatus, oauthDaysLeft, oauthAccount, connection, deathlink } = useStore()
+  const [charOpen, setCharOpen] = useState(false)
 
   const save = (key: keyof Settings) => (value: unknown) => {
     action({ type: 'saveSetting', key, value })
@@ -96,6 +98,8 @@ export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
       </div>
 
       <div style={{ padding: '28px 28px', maxWidth: 860 }}>
+        
+
         <Section title="GGG Account" id="settings-character">
           <Row label="OAuth status" note="Read-only access to character data.">
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -172,6 +176,19 @@ export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
                 </button>
               </Row>
             </>
+          )}
+        </Section>
+
+        <Section title="Character" id="settings-character-picker">
+          <Row label="Choose your character" note="Select or your active PoE character.">
+            <button className="btn" onClick={() => setCharOpen(o => !o)}>
+              {charOpen ? 'Hide ▲' : 'Show ▼'}
+            </button>
+          </Row>
+          {charOpen && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <CharacterPicker />
+            </div>
           )}
         </Section>
         <Section title="Item Filter" id="settings-filter">

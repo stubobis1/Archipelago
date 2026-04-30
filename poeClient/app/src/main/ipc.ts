@@ -153,7 +153,7 @@ export function initIpc(): void {
     }
     if (ev.type === 'disconnected') {
       logger.info('AP disconnected')
-      patch({ connection: 'disconnected', locations: [] })
+      patch({ connection: 'disconnected', locations: [], items: [] })
       pushChat({ t: timestamp(), kind: 'sys', body: 'Disconnected from server' })
     }
     if (ev.type === 'item') {
@@ -246,6 +246,9 @@ export function initIpc(): void {
       patch({ hints: state.hints })
     }
     if (ev.type === 'deathlink') {
+      // Incoming DeathLink bounce — kill our character via /exit.
+      // Self-filter handled by DeathLinkManager (timestamp dedup); we see only others' deaths.
+      // Use queueChatSend so it retries until PoE is focused (player may be tabbed out briefly).
       if (state.deathlink) {
         pushChat({ t: timestamp(), kind: 'sys', body: `DeathLink received from ${ev.source} — sending /exit` })
         queueChatSend('/exit')
@@ -297,7 +300,10 @@ export function initIpc(): void {
       }
     }
     if (ev.type === 'death') {
-      if (state.deathlink && ev.who === state.slotName) {
+      // Outgoing DeathLink — only broadcast when it's our own character that died.
+      // ev.who is the PoE character name from Client.txt; compare against charName
+      // (not slotName, which is the AP network slot and may differ from the in-game name).
+      if (state.deathlink && ev.who === state.charName) {
         apSocket.sendDeathlink(ev.who)
         pushChat({ t: timestamp(), kind: 'sys', body: `DeathLink sent (${ev.who} died)` })
       }

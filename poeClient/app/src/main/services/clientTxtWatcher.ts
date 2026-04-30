@@ -3,7 +3,7 @@ import chokidar from 'chokidar'
 import { logger } from './logger'
 
 const ZONE_RE  = /\] : You have entered (.+)\./
-const DEATH_RE = /\] (.+) has been slain\./
+const DEATH_RE = /\] : (.+) has been slain\./  // `: ` prefix is present in death lines (unlike some other log formats)
 const CHAT_RE  = /\]\s?(?:<.*?>)?\s?(?:@To|@From)?\s?(.+): (?:\x00)?(.*)/
 const FOCUS_RE = /\[WINDOW\] (Gained|Lost) focus/
 
@@ -28,7 +28,7 @@ export function parseLine(line: string): ClientTxtEvent {
   if (deathM) return { type: 'death', who: deathM[1] }
 
   const chatM = CHAT_RE.exec(line)
-  if (chatM) return { type: 'chat', who: chatM[1], msg: chatM[2] }
+  if (chatM) return { type: 'chat', who: chatM[1].replace(/^[^A-Za-z]/, ''), msg: chatM[2] }
 
   return { type: 'raw', line }
 }

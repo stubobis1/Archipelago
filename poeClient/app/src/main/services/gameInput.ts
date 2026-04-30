@@ -47,11 +47,15 @@ let lastSendMs = 0
 // // }
 
 // Tracks PoE window focus state from Client.txt "[WINDOW] Gained/Lost focus" lines.
-// Defaults to false until the first focus event is seen.
+// Defaults to false; seenFocusEvent tracks whether PoE has ever emitted these lines.
+// Some PoE versions/configs don't log [WINDOW] events — if none are ever seen we
+// assume focused so queued commands still fire.
 let poeWindowFocused = false
+let seenFocusEvent   = false
 
 clientTxtWatcher.on(ev => {
   if (ev.type === 'focus') {
+    seenFocusEvent   = true
     poeWindowFocused = ev.gained
     logger.debug(`[gameInput] PoE window focus: ${ev.gained ? 'gained' : 'lost'}`)
   }
@@ -61,6 +65,8 @@ clientTxtWatcher.on(ev => {
 export async function isPoeFocused(): Promise<boolean> {
   const s = settingsService.get()
   if (s.bypassFocusCheck) return true
+  // If PoE never emits [WINDOW] focus events, assume focused rather than blocking all sends.
+  if (!seenFocusEvent) return true
   return poeWindowFocused
 }
 

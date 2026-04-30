@@ -2,6 +2,8 @@ import React from 'react'
 import { useStore } from '../store'
 import logoUrl from '@resources/poeAP.png'
 
+const { clientVersion, backwardsCompatibleVersions } = window.electronAPI.poeVersion
+
 export function TitleBar() {
   const { connection, char, slotName, clientTxtOk, filterOk, oauthStatus, action } = useStore()
 
@@ -22,9 +24,13 @@ export function TitleBar() {
   return (
     <div className="titlebar">
       <img src={logoUrl} className="titlebar-logo" alt="" />
-      <span className="title">
-        Path of <em>Exile</em>
-        <span className="title-sub">Archipelago</span>
+      <span className="title">Archi<em>PoE</em>lago</span>
+      <span
+        className="mono muted"
+        style={{ fontSize: 10, cursor: 'default' }}
+        title={`Compatible: ${backwardsCompatibleVersions.join(', ')}`}
+      >
+        v{clientVersion}
       </span>
       <div className={`status-dot ${dotClass}`} />
       {charLabel && <span className="muted mono" style={{ fontSize: 10 }}>{charLabel}</span>}

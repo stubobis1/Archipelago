@@ -136,7 +136,7 @@ export interface ReceivedItem {
 
 export interface ChatMessage {
   t:       string   // HH:MM timestamp
-  kind:    'sys' | 'item' | 'hint' | 'chat' | 'self' | 'out' | 'chat-self'
+  kind:    'sys' | 'item' | 'hint' | 'chat' | 'self' | 'out' | 'chat-self' | 'err'
   who?:    string
   whoColor?: string
   body:    string
@@ -199,6 +199,19 @@ export interface AppState {
   // onboarding
   onboardingStep: number
   onboardingDone: boolean
+}
+
+declare global {
+  interface Window {
+    electronAPI: {
+      poeVersion: { clientVersion: string; backwardsCompatibleVersions: string[] }
+      action: (a: IpcAction) => Promise<unknown>
+      onStateFull:  (fn: (s: AppState) => void) => void
+      onStatePatch: (fn: (delta: Partial<AppState>) => void) => void
+      onHotkeyRevalidate: (fn: () => void) => void
+      removeAllListeners: (channel: string) => void
+    }
+  }
 }
 
 export type IpcAction =

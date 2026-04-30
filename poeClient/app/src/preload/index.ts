@@ -1,7 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcAction, AppState } from '@shared/types'
+import poeVersion from '../../poe-version.json'
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  poeVersion: { clientVersion: poeVersion.clientVersion, backwardsCompatibleVersions: poeVersion.backwardsCompatibleVersions },
   action: (a: IpcAction) => ipcRenderer.invoke('action', a),
 
   onStateFull:  (fn: (s: AppState) => void) => {
@@ -19,14 +21,3 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 })
 
-declare global {
-  interface Window {
-    electronAPI: {
-      action: (a: IpcAction) => Promise<unknown>
-      onStateFull:  (fn: (s: AppState) => void) => void
-      onStatePatch: (fn: (delta: Partial<AppState>) => void) => void
-      onHotkeyRevalidate: (fn: () => void) => void
-      removeAllListeners: (channel: string) => void
-    }
-  }
-}

@@ -3,6 +3,13 @@ import { useStore } from '../store'
 import type { ChatMessage } from '@shared/types'
 
 
+const SLOT_LABELS: Record<string, string> = {
+  BodyArmour: 'Body Armour', Helmet: 'Helmet', Gloves: 'Gloves', Boots: 'Boots',
+  Belt: 'Belt', Amulet: 'Amulet', Ring: 'Ring (left)', Ring2: 'Ring (right)',
+  Weapon: 'Weapon', Offhand: 'Off-hand', Flask: 'Flask',
+  Passives: 'Passive Points', Class: 'Class', GucciHobo: 'Gucci Hobo Mode',
+}
+
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div style={{ padding: '7px 10px', background: 'var(--bg-3)', borderRadius: 5, border: '1px solid var(--rule)' }}>
@@ -179,6 +186,23 @@ function ItemsPanel({ onNavigate }: { onNavigate: (screen: string, section?: str
 
       <MonitoringCard />
 
+
+      {/* Errors */}
+      {errors.length > 0 && (
+        <div>
+          <style>{`@keyframes err-pulse { 0%,100% { background: color-mix(in srgb, var(--err) 8%, var(--bg-3)); border-color: color-mix(in srgb, var(--err) 25%, transparent); } 50% { background: color-mix(in srgb, var(--err) 22%, var(--bg-3)); border-color: color-mix(in srgb, var(--err) 60%, transparent); } }`}</style>
+          <SectionLabel>Validation · {errors.length} issue{errors.length !== 1 ? 's' : ''}</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {errors.map((e, i) => (
+              <div key={i} style={{ padding: '8px 12px', borderRadius: 5, border: '1px solid', fontSize: 12, animation: 'err-pulse 1.6s ease-in-out infinite' }}>
+                <span style={{ color: 'var(--err)', fontWeight: 600 }}>{SLOT_LABELS[e.slot] ?? e.slot}</span>
+                <span className="muted" style={{ marginLeft: 8 }}>{e.msg}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Items received */}
       <div>
         <SectionLabel>Items received · {items.length}</SectionLabel>
@@ -216,20 +240,7 @@ function ItemsPanel({ onNavigate }: { onNavigate: (screen: string, section?: str
         </div>
       )}
 
-      {/* Errors */}
-      {errors.length > 0 && (
-        <div>
-          <SectionLabel>Validation · {errors.length} issue{errors.length !== 1 ? 's' : ''}</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {errors.map((e, i) => (
-              <div key={i} style={{ padding: '8px 12px', background: 'color-mix(in srgb, var(--err) 10%, var(--bg-3))', borderRadius: 5, border: '1px solid color-mix(in srgb, var(--err) 30%, transparent)', fontSize: 12 }}>
-                <span style={{ color: 'var(--err)', fontWeight: 600 }}>{e.slot}</span>
-                <span className="muted" style={{ marginLeft: 8 }}>{e.msg}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      
     </div>
   )
 }

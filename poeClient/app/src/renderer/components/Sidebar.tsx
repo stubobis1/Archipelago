@@ -1,6 +1,8 @@
 import { useStore } from '../store'
 import logoUrl from '@resources/poeAP.png'
 
+const { clientVersion, backwardsCompatibleVersions } = window.electronAPI.poeVersion
+
 type Screen = 'dashboard' | 'gear' | 'items' | 'locations' | 'goal' | 'settings' | 'setup'
 
 interface SidebarProps {
@@ -72,9 +74,10 @@ export function Sidebar({ active, onNavigate }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <img src={logoUrl} alt="PoE AP" style={{ width: 40, height: 40, marginBottom: 8, display: 'block' }} />
-        <div className="mark">Path of <em>Exile</em></div>
-        <div className="sub">Archipelago · v0.1</div>
+        <img src={logoUrl} alt="PoE AP" style={{ width: 50, height: 50, marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+        <div className="mark" style={{ textAlign: 'center' }}>Archi<em>PoE</em>lago</div>
+        <div className="sub" style={{ textTransform: 'none', fontSize: 9 }}>Randomizer for Path of Exile.</div>
+        <div className="sub" title={`Compatible: ${backwardsCompatibleVersions.join(', ')}`}>v{clientVersion}</div>
       </div>
 
       <nav className="nav">

@@ -36,7 +36,7 @@ function createAPSocket() {
     off(fn: Listener): void { listeners = listeners.filter(l => l !== fn) },
 
     /** Connect to an Archipelago server and authenticate as the given slot. */
-    async connect(addr: string, slotName: string, password: string, game = 'Path of Exile'): Promise<void> {
+    async connect(addr: string, slotName: string, password: string, _deathlink = false, game = 'Path of Exile'): Promise<void> {
       await this.disconnect()
 
       logger.info(`[AP] Connecting to ${addr} as "${slotName}" (game: ${game})`)
@@ -58,9 +58,13 @@ function createAPSocket() {
       client.socket.on('receivedPacket', (pkt: any) => {
         logger.debug('[AP] packet:', pkt?.cmd)
         if (pkt?.cmd === 'RoomInfo') _seedName = pkt.seed_name ?? ''
-        if (pkt?.cmd === 'Bounced' && Array.isArray(pkt?.tags) && pkt.tags.includes('DeathLink')) {
-          emit({ type: 'deathlink', source: pkt?.data?.source ?? '' })
-        }
+      })
+
+      // Use the built-in DeathLinkManager: handles self-filter via timestamp dedup,
+      // tag registration, and bounce routing — don't intercept raw Bounced packets.
+      client.deathLink.on('deathReceived', (source: string, _time: number, _cause: string) => {
+        logger.info('[AP] DeathLink received from', source)
+        emit({ type: 'deathlink', source })
       })
 
       client.socket.on('invalidPacket', (pkt: any) => {
@@ -149,7 +153,8 @@ function createAPSocket() {
       await client.login(addr, slotName, game, {
         password: password ?? '',
         items:    itemsHandlingFlags.all,
-        tags:     ['AP'],
+        // Always register DeathLink so we receive bounces; ipc layer gates behaviour on settings.
+        tags:     ['AP', 'DeathLink'],
       })
       logger.info('[AP] login() resolved successfully')
     },
@@ -263,13 +268,38 @@ function createAPSocket() {
       }
     },
 
-    /** Broadcast a DeathLink bounce to all DeathLink participants. */
+    /**
+     * Enable or disable the DeathLink tag via the built-in DeathLinkManager.
+     * Sends ConnectUpdate so the server re-routes bounces immediately.
+     * Call whenever the deathlink setting is toggled at runtime.
+     */
+    setDeathlinkTag(enabled: boolean): void {
+      if (!client || !_connected) return
+      try {
+        if (enabled) {
+          client.deathLink.enableDeathLink()
+        } else {
+          client.deathLink.disableDeathLink()
+        }
+        logger.info(`[AP] DeathLink tag ${enabled ? 'enabled' : 'disabled'}`)
+      } catch (e: any) {
+        logger.warn('[AP] setDeathlinkTag failed:', e?.message)
+      }
+    },
+
+    /**
+     * Broadcast a DeathLink bounce via the built-in DeathLinkManager.
+     * `source` should be the PoE character name so other clients can show who died.
+     * The manager records the send timestamp to self-filter the echoed bounce.
+     * No-ops if not connected.
+     */
     sendDeathlink(source: string): void {
       if (!client || !_connected) return
-      client.bounce(
-        { tags: ['DeathLink'] },
-        { source, time: Date.now() / 1000, cause: `${source} has been slain.` }
-      )
+      try {
+        client.deathLink.sendDeathLink(source, `${source} has been slain.`)
+      } catch (e: any) {
+        logger.warn('[AP] sendDeathlink failed:', e?.message)
+      }
     },
   }
 }

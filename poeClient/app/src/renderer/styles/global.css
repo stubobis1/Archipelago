@@ -59,7 +59,7 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
 
 .titlebar { height: 36px; background: var(--bg-2); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: var(--ink-3); -webkit-app-region: drag; flex-shrink: 0; gap: 10px; }
 .titlebar-logo { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; opacity: .9; flex-shrink: 0; }
-.titlebar .title { font-family: var(--display); font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: .01em; display: flex; align-items: baseline; gap: 5px; line-height: 1; }
+.titlebar .title { font-family: var(--display); font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: .01em; line-height: 1; }
 .titlebar .title em { color: var(--accent); font-style: italic; }
 .titlebar .title-sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); padding-left: 3px; border-left: 1px solid var(--rule-2); }
 .titlebar .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 5px currentColor; color: var(--ok); flex-shrink: 0; }
@@ -176,6 +176,7 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
 .chat-body.self { color: var(--accent); font-family: var(--mono); font-size: 11.5px; }
 .chat-body.chat { color: var(--ink-2); }
 .chat-body.chat-self { color: var(--ink); }
+.chat-body.err { color: var(--err); font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
 
 .chip { all: unset; cursor: pointer; padding: 3px 9px; font-size: 11px; border: 1px solid var(--rule-2); border-radius: 99px; color: var(--accent); background: color-mix(in oklch, var(--accent) 6%, transparent); }
 .chip:hover { background: color-mix(in oklch, var(--accent) 14%, transparent); }
@@ -213,7 +214,7 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
 
 /* ── Equipment AP tiers ──────────────────────────────────────────────── */
 .eq-slot-empty { opacity: .5; }
-.eq-slot-img { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
+.eq-slot-img { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
 .eq-slot-lg .eq-slot-img { width: 80px; height: 80px; }
 .eq-slot-lg { min-height: 160px; }
 .eq-rarity-row { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: center; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
@@ -251,7 +252,7 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
   .items-page-outer { flex-direction: row; align-items: flex-start; gap: 36px; max-width: none; }
   .items-page-content { flex: 1; min-width: 0; }
   .items-paperdoll-bottom { display: none; }
-  .items-paperdoll-sidebar { display: block; position: sticky; top: 24px; width: 420px; flex-shrink: 0; }
+  .items-paperdoll-sidebar { display: block; position: sticky; top: 24px; flex: 1; min-width: 420px; }
 }
 
 /* ── Items screen categories ─────────────────────────────────────────── */
@@ -271,12 +272,12 @@ body, html { margin: 0; padding: 0; font-family: var(--sans); color: var(--ink);
   padding: 0.4rem 0.3rem; border-radius: 3px; width: 68px;
   font-size: 0.75rem; text-align: center; color: var(--ink-4);
 }
-.class-card img { width: 44px; height: 44px; object-fit: contain; opacity: 0.25; filter: grayscale(1); image-rendering: pixelated; }
+.class-card img { width: 44px; height: 44px; object-fit: contain; opacity: 0.25; filter: grayscale(1); }
 .class-card.received img  { opacity: 1; filter: none; }
 .class-card.received.base { border-color: #4a2a10; color: #e08858; }
 .class-card.received.asc  { border-color: #4a2a10; color: var(--accent); }
 .item-tag { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.4rem 0.15rem 0.2rem; font-size: 0.78rem; background: var(--bg-3); border: 1px solid var(--rule); border-radius: 2px; color: var(--ink); }
-.item-img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
+.item-img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
 .item-tag:not(.gem):not(.support):not(.util) .item-img { width: 44px; height: 44px; }
 .item-tag .item-count { background: var(--bg-2); color: var(--accent); font-family: var(--mono); font-size: 0.68rem; padding: 0 0.3rem; border-radius: 8px; }
 .item-tag.gem     { border-color: #2a5a2a; color: #a5f3a5; }

@@ -15,17 +15,32 @@ describe('parseLine', () => {
   })
 
   it('parses player death', () => {
-    const line = '2024/01/01 12:00:00 1 a [INFO Client 1] StuBob has been slain.'
+    const line = '2024/01/01 12:00:00 1 a [INFO Client 1] : StuBob has been slain.'
     expect(parseLine(line)).toEqual({ type: 'death', who: 'StuBob' })
   })
 
   it('parses spaced player name death', () => {
-    const line = '2024/01/01 12:00:00 1 a [INFO Client 1] Some Player has been slain.'
+    const line = '2024/01/01 12:00:00 1 a [INFO Client 1] : Some Player has been slain.'
     expect(parseLine(line)).toEqual({ type: 'death', who: 'Some Player' })
   })
 
   it('parses local chat message', () => {
     const ev = parseLine('2024/01/01 12:00:00 1 a [INFO Client 1] PlayerName: hello world')
+    expect(ev).toMatchObject({ type: 'chat', who: 'PlayerName', msg: 'hello world' })
+  })
+
+  it('strips $ prefix from global chat', () => {
+    const ev = parseLine('2024/01/01 12:00:00 1 a [INFO Client 1] $PlayerName: hello world')
+    expect(ev).toMatchObject({ type: 'chat', who: 'PlayerName', msg: 'hello world' })
+  })
+
+  it('strips % prefix from party chat', () => {
+    const ev = parseLine('2024/01/01 12:00:00 1 a [INFO Client 1] %PlayerName: hello world')
+    expect(ev).toMatchObject({ type: 'chat', who: 'PlayerName', msg: 'hello world' })
+  })
+
+  it('strips & prefix from trade chat', () => {
+    const ev = parseLine('2024/01/01 12:00:00 1 a [INFO Client 1] &PlayerName: hello world')
     expect(ev).toMatchObject({ type: 'chat', who: 'PlayerName', msg: 'hello world' })
   })
 
@@ -127,7 +142,7 @@ describe('watcher readNew — file change events', () => {
     w.on(ev => events.push(ev))
     w.start('/poe/logs/Client.txt')
 
-    fakeContent = '2024/01/01 12:00:00 1 a [INFO Client 1] StuBob has been slain.\n'
+    fakeContent = '2024/01/01 12:00:00 1 a [INFO Client 1] : StuBob has been slain.\n'
     fakeSize    = Buffer.byteLength(fakeContent)
     onChangeFn?.()
 
