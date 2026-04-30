@@ -1,0 +1,3 @@
+[submodule "Path-of-Exile-Archipelago-Client"]
+	path = Path-of-Exile-Archipelago-Client
+	url = git@github.com:stubobis1/Path-of-Exile-Archipelago-Client.git
