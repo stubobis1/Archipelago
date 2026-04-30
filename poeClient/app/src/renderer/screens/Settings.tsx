@@ -48,7 +48,6 @@ export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
 
   const [paths, setPaths]           = useState({ clientTxt: '', docPath: '', baseFilter: '' })
   const [whisper, setWhisper]       = useState(true)
-  const [bypass,  setBypass]        = useState(false)
   const [filterDisplay, setFilterDisplay] = useState(0)
   const [filterSound,   setFilterSound]   = useState(2)
   const [delayEnter, setDelayEnter] = useState(0)
@@ -71,7 +70,6 @@ export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
         baseFilter: s.baseItemFilter  ?? '',
       })
       setWhisper(s.whisperUpdates  ?? true)
-      setBypass(s.bypassFocusCheck ?? false)
       setFilterDisplay(s.filterDisplay ?? 0)
       setFilterSound(s.filterSound   ?? 2)
       setDelayEnter(s.inputDelayEnter ?? 0)
@@ -245,9 +243,6 @@ export function SettingsScreen({ scrollTo }: { scrollTo?: string }) {
           </Row>
         </Section>
         <Section title="Game Input">
-          <Row label="Bypass focus check" note="Always send commands even if PoE isn't in the foreground.">
-            <Toggle on={bypass} onChange={v => { setBypass(v); save('bypassFocusCheck')(v) }} />
-          </Row>
           <Row label="Item whispers" note="Show a whisper in-game when you receive a new item.">
             <Toggle on={whisper} onChange={v => { setWhisper(v); action({ type: 'setWhisperUpdates', enabled: v }) }} />
           </Row>
