@@ -141,7 +141,36 @@ def main():
     with open(items_path, encoding='utf-8') as f:
         item_names = sorted(json.load(f).keys())
     with open(locs_path, encoding='utf-8') as f:
-        location_names = sorted(json.load(f).keys())
+        locs_map = json.load(f)
+    # Order locations by AP ID (source-file order) rather than alphabetically.
+    base_items_path  = os.path.join(BASE, 'worlds', 'poe', 'data', 'BaseItems.json')
+    level_locs_path  = os.path.join(BASE, 'worlds', 'poe', 'data', 'LevelLocations.json')
+    bosses_data_path = os.path.join(BASE, 'worlds', 'poe', 'data', 'Bosses.json')
+    with open(base_items_path, encoding='utf-8') as f:
+        base_items_raw = json.load(f)
+    with open(level_locs_path, encoding='utf-8') as f:
+        level_locs_raw = json.load(f)
+    with open(bosses_data_path, encoding='utf-8') as f:
+        bosses_order_raw = json.load(f)
+    _seen: set = set()
+    _ordered: list = []
+    for item in base_items_raw:
+        name = item.get('name') or item['baseItem']
+        if name in locs_map and name not in _seen:
+            _ordered.append(name); _seen.add(name)
+    for item in level_locs_raw:
+        name = item['name']
+        if name in locs_map and name not in _seen:
+            _ordered.append(name); _seen.add(name)
+    for key in bosses_order_raw:
+        name = f'defeat {key}'
+        if name in locs_map and name not in _seen:
+            _ordered.append(name); _seen.add(name)
+    # Append anything not matched above (future-proofing)
+    for name in locs_map:
+        if name not in _seen:
+            _ordered.append(name)
+    location_names = _ordered
 
     ITEM_OPTS = {'local_items', 'non_local_items', 'start_hints'}
     LOC_OPTS  = {'start_location_hints', 'exclude_locations', 'priority_locations'}
@@ -170,10 +199,16 @@ def main():
         'minimum_ap_version':  manifest.get('minimum_ap_version', AP_VERSION),
     }
 
-    out_path = os.path.join(BASE, 'worlds', 'poe', 'poeClient', 'pathofexile_ap', 'options_data.json')
-    with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2)
-    print(f'Written: {out_path}')
+    out_paths = [
+        os.path.join(BASE, 'worlds', 'poe', 'poeClient', 'pathofexile_ap', 'options_data.json'),
+        os.path.join(BASE, 'Path-of-Exile-Archipelago-Client', 'app', 'src', 'data', 'poe_options.json'),
+        os.path.join(BASE, 'pathofexile_ap', 'options_data.json'),
+    ]
+    for out_path in out_paths:
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        print(f'Written: {out_path}')
 
 
 if __name__ == '__main__':

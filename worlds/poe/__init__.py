@@ -52,7 +52,7 @@ class PathOfExileWorld(World):
     tree, thousands of items, and a huge endgame full of challenging bosses, and a wide variety of skill gems that define abilities.
     """
     # CHANGE THIS TO OUTPUT VISUAL
-    _debug = True
+    _debug = False
 
 
     game = "Path of Exile"
