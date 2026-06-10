@@ -7,7 +7,9 @@
       "WebFetch(domain:thephar.github.io)",
       "WebFetch(domain:archipelago.js.org)",
       "WebFetch(domain:unpkg.com)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\src\\\\archipelago\\\\Archipelago\\\\worlds\\\\poe\" -Force | Select-Object Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"Dir\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\src\\\\archipelago\\\\Archipelago\\\\Path-of-Exile-Archipelago-Client\" -Force | Select-Object Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"Dir\"}else{\"File\"}}} | Format-Table -AutoSize)"
     ]
   }
 }
