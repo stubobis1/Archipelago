@@ -27,7 +27,7 @@ from .. import Locations
 from ..Rules import can_reach
 
 
-AREA_LOCATION_NAMES = ["Reach Ancient Pyramid", "Reach Vaal Ruins"]
+AREA_LOCATION_NAMES = ["Reach The Ancient Pyramid", "Reach The Vaal Ruins"]
 
 
 class TestAncientPyramidAndVaalRuinsReachable(PoeTestBase):
