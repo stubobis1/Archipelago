@@ -627,10 +627,10 @@
 
 {"category":["MainSkillGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Pact of Beidat","id":904},
 {"category":["MainSkillGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Pact of Ghorr","id":905},
-{"category":["MainSkillGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Pact of K'tash","id":906},
+{"category":["MainSkillGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Pact of K'Tash","id":906},
 {"category":["MainSkillGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Pact of Lycia","id":907},
 
-{"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Coursing Currents Support","id":908},
+{"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Coursing Current Support","id":908},
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Crystalfall Support","id":909},
 
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Awakened Empower Support","id":910},
@@ -678,7 +678,7 @@
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Frostmage Support","id":950},
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Greater Devour Support","id":951},
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Greater Unleash Support","id":952},
-{"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Minion Pact Support","id":953},
+{"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Communion Support","id":953},
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Overloaded Intensity Support","id":954},
 
 {"category":["SupportGem", "Exceptional"],"reqLevel":72,"classification":0,"name":"Eclipse Support","id":955},

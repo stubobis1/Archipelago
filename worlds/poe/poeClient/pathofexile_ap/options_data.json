@@ -664,6 +664,7 @@
             "Cold Snap",
             "Cold to Fire Support",
             "Combustion Support",
+            "Communion Support",
             "Companionship Support",
             "Concentrated Effect Support",
             "Conductivity",
@@ -678,7 +679,7 @@
             "Cooldown Recovery Support",
             "Corrupting Cry Support",
             "Corrupting Fever",
-            "Coursing Currents Support",
+            "Coursing Current Support",
             "Crackling Lance",
             "Creeping Frost",
             "Cremation",
@@ -929,7 +930,6 @@
             "Minefield Support",
             "Minion Damage Support",
             "Minion Life Support",
-            "Minion Pact Support",
             "Minion Speed Support",
             "Mirage Archer Support",
             "Mirror Arrow",
@@ -972,7 +972,7 @@
             "Pacifism Support",
             "Pact of Beidat",
             "Pact of Ghorr",
-            "Pact of K'tash",
+            "Pact of K'Tash",
             "Pact of Lycia",
             "Pathfinder",
             "Penance Brand",
@@ -1332,6 +1332,7 @@
             "Cold Snap",
             "Cold to Fire Support",
             "Combustion Support",
+            "Communion Support",
             "Companionship Support",
             "Concentrated Effect Support",
             "Conductivity",
@@ -1346,7 +1347,7 @@
             "Cooldown Recovery Support",
             "Corrupting Cry Support",
             "Corrupting Fever",
-            "Coursing Currents Support",
+            "Coursing Current Support",
             "Crackling Lance",
             "Creeping Frost",
             "Cremation",
@@ -1597,7 +1598,6 @@
             "Minefield Support",
             "Minion Damage Support",
             "Minion Life Support",
-            "Minion Pact Support",
             "Minion Speed Support",
             "Mirage Archer Support",
             "Mirror Arrow",
@@ -1640,7 +1640,7 @@
             "Pacifism Support",
             "Pact of Beidat",
             "Pact of Ghorr",
-            "Pact of K'tash",
+            "Pact of K'Tash",
             "Pact of Lycia",
             "Pathfinder",
             "Penance Brand",
@@ -2012,6 +2012,7 @@
             "Cold Snap",
             "Cold to Fire Support",
             "Combustion Support",
+            "Communion Support",
             "Companionship Support",
             "Concentrated Effect Support",
             "Conductivity",
@@ -2026,7 +2027,7 @@
             "Cooldown Recovery Support",
             "Corrupting Cry Support",
             "Corrupting Fever",
-            "Coursing Currents Support",
+            "Coursing Current Support",
             "Crackling Lance",
             "Creeping Frost",
             "Cremation",
@@ -2277,7 +2278,6 @@
             "Minefield Support",
             "Minion Damage Support",
             "Minion Life Support",
-            "Minion Pact Support",
             "Minion Speed Support",
             "Mirage Archer Support",
             "Mirror Arrow",
@@ -2320,7 +2320,7 @@
             "Pacifism Support",
             "Pact of Beidat",
             "Pact of Ghorr",
-            "Pact of K'tash",
+            "Pact of K'Tash",
             "Pact of Lycia",
             "Pathfinder",
             "Penance Brand",
@@ -5961,8 +5961,66 @@
       "death_link": 1
     }
   },
+  "class_tree": [
+    {
+      "base": "Marauder",
+      "ascendancies": [
+        "Berserker",
+        "Chieftain",
+        "Juggernaut"
+      ]
+    },
+    {
+      "base": "Duelist",
+      "ascendancies": [
+        "Champion",
+        "Gladiator",
+        "Slayer"
+      ]
+    },
+    {
+      "base": "Ranger",
+      "ascendancies": [
+        "Deadeye",
+        "Pathfinder",
+        "Warden"
+      ]
+    },
+    {
+      "base": "Shadow",
+      "ascendancies": [
+        "Assassin",
+        "Saboteur",
+        "Trickster"
+      ]
+    },
+    {
+      "base": "Witch",
+      "ascendancies": [
+        "Elementalist",
+        "Necromancer",
+        "Occultist"
+      ]
+    },
+    {
+      "base": "Templar",
+      "ascendancies": [
+        "Guardian",
+        "Hierophant",
+        "Inquisitor"
+      ]
+    },
+    {
+      "base": "Scion",
+      "ascendancies": [
+        "Ascendant",
+        "Reliquarian",
+        "Luminary"
+      ]
+    }
+  ],
   "version_info": {
-    "world_version": "2.1.0",
+    "world_version": "2.2.0",
     "ap_version": "0.6.7",
     "minimum_ap_version": "0.6.3"
   }
